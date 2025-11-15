@@ -1,0 +1,5 @@
+{
+  "name": "Kimetsu Forge",
+  "description": "A web application for creating and managing content related to the Kimetsu no Yaiba universe, powered by Gemini. This is the foundational phase focusing on the design system and application structure.",
+  "requestFramePermissions": []
+}
