@@ -1,8 +1,8 @@
+
 import type { Category, Rarity, FilterState, ViewItem } from './types';
 import { 
     AnvilIcon, 
     ConflictsIcon, 
-    GuerraDeClasIcon,
     CharactersIcon, 
     TechniquesIcon, 
     LocationsIcon, 
@@ -13,173 +13,46 @@ import {
 } from './components/icons';
 import type { SelectOption } from './components/ui/Select';
 
-// =================================================================================
-// ⚔️ DADOS-FONTE DA FORJA - ATUALIZADOS COM BASE NO CONJUNTO COMPLETO
-// =================================================================================
-
-export const PERSONAGENS_ORIGENS_DATA: { name: string, concept: string, mechanics: string, attributes: string }[] = [
-    {
-      "name": "Tsuguko - Herdeiro do Pilar",
-      "concept": "O discípulo direto de um Hashira, carregando o peso do legado.",
-      "mechanics": "Pode \"imitar\" o mestre por 3 turnos para ganhar bônus (+1d4). Pode gastar todo o Momentum (5) para um Ataque Extra Devastador, mas fica exausto por um turno.",
-      "attributes": "PV 10 / PC 9"
-    },
-    {
-      "name": "Samurai - Honra Acima de Tudo",
-      "concept": "O guerreiro que vive pelo Bushidō.",
-      "mechanics": "Ganha +1 em defesa e vantagem contra Medo/Intimidação (enquanto honrado). Se quebrar o código, perde os bônus até se redimir. Golpe de Vingança: um ataque muito forte quando com <5% PV ou um aliado cai.",
-      "attributes": "PV 13 / PC 6"
-    },
-    {
-      "name": "Ninja - A Sombra Silenciosa",
-      "concept": "O mestre da furtividade, emboscada e venenos.",
-      "mechanics": "Resistência passiva a veneno e a chance de anular completamente um efeito de veneno ou paralisia (1x/dia). Ataque Mortal: um golpe devastador contra alvos que não o viram.",
-      "attributes": "PV 12 / PC 8"
-    }
+const BREATHING_STYLES_DATA: { nome: string }[] = [
+    { nome: 'Água' }, { nome: 'Chama' }, { nome: 'Vento' }, { nome: 'Pedra' }, { nome: 'Trovão' },
+    { nome: 'Sol' }, { nome: 'Lua' }, { nome: 'Névoa' }, { nome: 'Serpente' }, { nome: 'Amor' },
+    { nome: 'Inseto' }, { nome: 'Som' }, { nome: 'Besta' }, { nome: 'Flor' },
 ];
 
-export const HABILIDADES_ESPECIAIS_DATA: { name: string, description: string, type: string }[] = [
-    { 
-        "name": "Visão Aguçada", 
-        "description": "Conceito: Olhos além do humano, percebe detalhes e ilusões fracas.\nEfeito: +2 Percepção Visual, +1 Acerto, +1 Esquiva, detecção passiva de truques visuais.", 
-        "type": "Passiva" 
-    },
-    { 
-        "name": "Audição Sobrenatural", 
-        "description": "Conceito: Ouve intenções/passos, revela inimigos ocultos.\nEfeito: +2 Percepção Auditiva, detecção tátil no escuro, pode localizar sons para se guiar.", 
-        "type": "Passiva" 
-    },
-    { 
-        "name": "Olfato Sobrenatural", 
-        "description": "Conceito: Nariz que lê sangue, veneno e emoção.\nEfeito: +2 Percepção Olfativa, identifica Onis/humanos e venenos, detecta presença demoníaca recente.", 
-        "type": "Passiva" 
-    },
-    {
-        "name": "Marechi", 
-        "description": "Conceito: Sangue especial que atrai e dá vantagem contra Onis.\nEfeito: Vantagem em acerto contra Onis; resistência a dano demoníaco. Ao sofrer dano, Onis num raio de 12m ganham +1 Acerto e +1 Movimento contra você até o fim do combate.", 
-        "type": "Passiva" 
-    }
+const HUNTER_ARSENAL_DATA: { nome: string }[] = [
+    { nome: 'Katana Nichirin' }, { nome: 'Wakizashi Nichirin' }, { nome: 'Nodachi Nichirin' },
+    { nome: 'Katanas Nichirin Duplas' }, { nome: 'Mangual Nichirin' }, { nome: 'Machado e Mangual com Espinhos' },
+    { nome: 'Espingarda Nichirin' }, { nome: 'Lâmina Chicote Nichirin' },
 ];
 
-export const RESPIRACOES_DATA: { name: string, description: string }[] = [
-    {
-      "name": "Respiração da Água",
-      "description": "Imita o fluxo, flexibilidade e adaptação da água. Movimentos suaves, curvos e contínuos que conduzem a lâmina como correnteza."
-    },
-    {
-      "name": "Respiração das Chamas",
-      "description": "Evoca o calor e a fúria do fogo: ataques poderosos e singulares, geralmente iniciados de postura elevada e com impacto visual caloroso."
-    },
-    {
-      "name": "Respiração do Trovão",
-      "description": "Foca em velocidade relâmpago; golpes estonteantes e explosivos que esmagam o inimigo em instantes."
-    },
-    {
-      "name": "Respiração do Vento",
-      "description": "Imita redemoinhos e torrentes de ar: cortes rotacionais rápidos que ampliam alcance e geram lâminas de vento cortantes."
-    },
-    {
-      "name": "Respiração da Pedra",
-      "description": "Baseada em terra e pedra: técnicas robustas que usam terreno e massa para ataques defensivos e poderosos."
-    }
+const KEKKIJUTSU_INSPIRATIONS_DATA: { value: string, label: string }[] = [
+    { value: 'biocinese', label: 'Biocinese (Manipulação Corporal)' },
+    { value: 'elemental', label: 'Manipulação Elemental' },
+    { value: 'espacial', label: 'Manipulação Espacial' },
+    { value: 'ilusoes', label: 'Ilusões e Sonhos' },
+    { value: 'aumento', label: 'Aumento de Poder Físico' },
+    { value: 'invocacao', label: 'Invocação' },
 ];
 
-export const KEKKIJUTSU_INSPIRATIONS_DATA: { value: string, label: string }[] = [
-    { "value": "Sangue", "label": "Sangue" },
-    { "value": "Ossos", "label": "Ossos" },
-    { "value": "Sombras", "label": "Sombras" },
-    { "value": "Fogo Infernal", "label": "Fogo Infernal" },
-    { "value": "Gelo Eterno", "label": "Gelo Eterno" },
-    { "value": "Ilusões", "label": "Ilusões" },
-    { "value": "Manipulação Espacial", "label": "Manipulação Espacial" }
+const ONI_ORIGINS_DATA: { nome: string }[] = [
+    { nome: 'Passado Trágico' }, { nome: 'Experimento Científico' },
+    { nome: 'Linhagem Amaldiçoada' }, { nome: 'Transformação Voluntária' }, { nome: 'Vítima de Muzan' },
 ];
 
-export const ONIS_ORIGENS_DATA: { name: string, concept: string, mechanics: string }[] = [
-    {
-      "name": "Vingança Inacabada",
-      "concept": "Um humano traído ou assassinado que retornou como Oni para buscar vingança.",
-      "mechanics": "Ganha bônus de dano contra alvos que se assemelham ao seu algoz do passado."
-    },
-    {
-      "name": "Fome Insaciável",
-      "concept": "Um indivíduo que morreu de fome e cuja obsessão por comida o transformou em um Oni com um apetite sem fim.",
-      "mechanics": "Pode consumir partes de inimigos para regenerar vida rapidamente."
-    },
-    {
-      "name": "Artista Amaldiçoado",
-      "concept": "Um artista cuja paixão se tornou uma obsessão doentia, transformando-o em um Oni que distorce a realidade.",
-      "mechanics": "Utiliza Kekkijutsu baseado em ilusões, manipulação de cores, sons ou formas."
-    }
+const ORIGINS_DATA: { nome: string }[] = [
+    { nome: 'Kakushi' }, { nome: 'Vila dos Ferreiros' },
+    { nome: 'Ex-Membro de Culto' }, { nome: 'Família Nobre' }, { nome: 'Estrangeiro' },
 ];
 
-export const LOCACOES_TERRENOS_DATA: { value: string, label: string }[] = [
-    { "value": "Floresta Densa", "label": "Floresta Densa" },
-    { "value": "Montanhas Rochosas", "label": "Montanhas Rochosas" },
-    { "value": "Pântano Sombrio", "label": "Pântano Sombrio" },
-    { "value": "Cidade Assombrada", "label": "Cidade Assombrada" }
+const SPECIAL_ABILITIES_DATA: { name: string }[] = [
+    { name: 'Olfato Aprimorado' }, { name: 'Audição Aprimorada' }, { name: 'Tato Aprimorado' },
+    { name: 'Respiração de Concentração Total: Constante' }, { name: 'Mundo Transparente' }, { name: 'Marca do Caçador' },
 ];
-
-export const CONFLITOS_CLANS_DATA: { name: string }[] = [
-    { "name": "Esquadrão de Caçadores de Demônios" },
-    { "name": "Clã Ubuyashiki" },
-    { "name": "Os Doze Kizuki (Luas Demoníacas)" },
-    { "name": "Família Rengoku" }
-];
-
-export const ITENS_ARMAS_DATA: { name: string, description: string, crit: string, damageType: string, property: string, damage: string }[] = [
-    {
-      "name": "Katana",
-      "description": "Lâmina curva do samurai, equilibrada entre corte e velocidade",
-      "crit": "20",
-      "damageType": "Cortante",
-      "property": "Balanceada",
-      "damage": "6"
-    },
-    {
-      "name": "Katana Serrilhada",
-      "description": "Katana com serrilhas para causar ferimentos mais graves.",
-      "crit": "20",
-      "damageType": "Cortante",
-      "property": "Sangramento Grave",
-      "damage": "8"
-    },
-    {
-      "name": "Katana Chicote",
-      "description": "Lâmina segmentada que pode se estender como um chicote.",
-      "crit": "19",
-      "damageType": "Cortante",
-      "property": "Alcance Flexível",
-      "damage": "5"
-    },
-    {
-      "name": "Arco Longo",
-      "description": "Arco tradicional de longo alcance.",
-      "crit": "19",
-      "damageType": "Perfurante",
-      "property": "Tiro Longo",
-      "damage": "5"
-    }
-];
-
-export const CAMPANHAS_MISSOES_DATA: { value: string, label: string }[] = [
-    { "value": "Investigação de Desaparecimentos", "label": "Investigação de Desaparecimentos" },
-    { "value": "Extermínio de Oni", "label": "Extermínio de Oni" },
-    { "value": "Resgate de Reféns", "label": "Resgate de Reféns" }
-];
-
-export const NPCS_PROFISSOES_DATA: string[] = [
-    "Samurai", "Ninja", "Ronin", "Monge Guerreiro", "Ferreiro de Katanas", "Comerciante", "Gueixa"
-];
-
-
-// =================================================================================
-// DADOS DE CONFIGURAÇÃO DA UI (Mantidos e atualizados)
-// =================================================================================
 
 export const PROFESSIONS_BY_TEMATICA: { [key: string]: string[] } = {
-    all: NPCS_PROFISSOES_DATA,
-    Urbano: ['Comerciante', 'Puxador de Riquixá', 'Médico', 'Dono de Restaurante', 'Policial', 'Gueixa'],
-    Rural: ['Fazendeiro', 'Lenhador', 'Caçador', 'Monge', 'Herborista', 'Ferreiro de Katanas'],
+    all: ['Fazendeiro', 'Comerciante', 'Artesão', 'Médico', 'Monge', 'Puxador de Riquixá', 'Gueixa'],
+    Urbano: ['Comerciante', 'Puxador de Riquixá', 'Médico', 'Dono de Restaurante', 'Policial'],
+    Rural: ['Fazendeiro', 'Lenhador', 'Caçador', 'Monge', 'Herborista'],
     Artistico: ['Pintor', 'Músico', 'Ator de Kabuki', 'Gueixa', 'Escritor'],
 };
 
@@ -187,6 +60,18 @@ export const TEMATICAS_DATA: { value: string, label: string }[] = [
     { value: 'Vingança', label: 'Vingança' }, { value: 'Redenção', label: 'Redenção' },
     { value: 'Dever', label: 'Dever' }, { value: 'Sobrevivência', label: 'Sobrevivência' },
     { value: 'Tradição vs Modernidade', label: 'Tradição vs Modernidade' }, { value: 'Laços Familiares', label: 'Laços Familiares' },
+];
+
+const MISSION_TYPES_DATA: { value: string, label: string }[] = [
+    { value: 'Investigação', label: 'Investigação' }, { value: 'Extermínio', label: 'Extermínio' },
+    { value: 'Proteção', label: 'Proteção' }, { value: 'Reconhecimento', label: 'Reconhecimento' },
+    { value: 'Resgate', label: 'Resgate' },
+];
+
+const TERRAIN_TYPES_DATA: { value: string, label: string }[] = [
+    { value: 'Floresta Densa', label: 'Floresta Densa' }, { value: 'Montanha Nevada', label: 'Montanha Nevada' },
+    { value: 'Cidade Agitada', label: 'Cidade Agitada' }, { value: 'Pântano', label: 'Pântano' },
+    { value: 'Caverna Subterrânea', label: 'Caverna Subterrânea' }, { value: 'Fortaleza Infinita', label: 'Fortaleza Infinita' },
 ];
 
 const EVENT_TYPES_DATA: { value: string, label: string }[] = [
@@ -210,13 +95,18 @@ const ONI_CLASSES_DATA: { name: string }[] = [
     { name: 'Guarda Pessoal de Muzan' }, { name: 'Oni Renegado' }, { name: 'Oni Comum' },
 ];
 
-const BLADE_COLOR_DATA: { name: string }[] = [
-    { name: 'Preto' }, { name: 'Azul' }, { name: 'Vermelho' }, { name: 'Amarelo' },
-    { name: 'Verde' }, { name: 'Rosa' }, { name: 'Branco' }, { name: 'Cinza-Índigo' }, { name: 'Lavanda' },
+const BLADE_COLOR_DATA: { nome: string }[] = [
+    { nome: 'Preto' }, { nome: 'Azul' }, { nome: 'Vermelho' }, { nome: 'Amarelo' },
+    { nome: 'Verde' }, { nome: 'Rosa' }, { nome: 'Branco' }, { nome: 'Cinza-Índigo' }, { nome: 'Lavanda' },
 ];
 
-const TONALIDADE_DATA: { name: string }[] = [
-    { name: 'Sombria' }, { name: 'Heróica' }, { name: 'Trágica' }, { name: 'Cômica' }, { name: 'Misteriosa' },
+const TONALIDADE_DATA: { nome: string }[] = [
+    { nome: 'Sombria' }, { nome: 'Heróica' }, { nome: 'Trágica' }, { nome: 'Cômica' }, { nome: 'Misteriosa' },
+];
+
+const CLAN_DATA: { name: string }[] = [
+    { name: 'Clã Ubuyashiki' }, { name: 'Família Kamado' }, { name: 'Família Rengoku' },
+    { name: 'Clã Uzui' }, { name: 'Família Shinazugawa' }, { name: 'Doze Kizuki' }, { name: 'Esquadrão de Caçadores de Demônios' },
 ];
 
 const STRATEGY_DATA: { name: string }[] = [
@@ -249,13 +139,12 @@ const METALS_DATA: { value: string, label: string }[] = [
 
 export const VIEWS: ViewItem[] = [
     { id: 'forge', label: 'Forja', icon: AnvilIcon },
-    { id: 'conflicts', label: 'Guerra', icon: ConflictsIcon },
-    { id: 'guerra_de_clas', label: 'Guerra de Clãs', icon: GuerraDeClasIcon },
+    { id: 'conflicts', label: 'Conflitos', icon: ConflictsIcon },
     { id: 'characters', label: 'Personagens', icon: CharactersIcon },
     { id: 'techniques', label: 'Técnicas', icon: TechniquesIcon },
-    { id: 'locations', label: 'Mundo', icon: LocationsIcon },
+    { id: 'locations', label: 'Locais', icon: LocationsIcon },
     { id: 'master_tools', label: 'Mestre', icon: MasterToolsIcon },
-    { id: 'alchemist', label: 'Alquimia', icon: AlchemistIcon },
+    { id: 'alchemist', label: 'Alquimista', icon: AlchemistIcon },
     { id: 'cosmaker', label: 'Cosmaker', icon: CosmakerIcon },
     { id: 'filmmaker', label: 'Cineasta', icon: FilmmakerIcon },
 ];
@@ -280,25 +169,25 @@ export const RARITIES: (Rarity | 'Aleatória')[] = ['Aleatória', 'Comum', 'Inco
 
 export const LEVELS = Array.from({ length: 20 }, (_, i) => i + 1);
 
-export const WEAPON_OPTIONS = ITENS_ARMAS_DATA.map(w => ({ value: w.name, label: w.name }));
-export const BREATHING_STYLE_OPTIONS = RESPIRACOES_DATA.map(b => ({ value: b.name, label: b.name }));
+export const WEAPON_OPTIONS = HUNTER_ARSENAL_DATA.map(w => ({ value: w.nome, label: w.nome }));
+export const BREATHING_STYLE_OPTIONS = BREATHING_STYLES_DATA.map(b => ({ value: b.nome, label: b.nome }));
 export const KEKKIJUTSU_INSPIRATION_OPTIONS = KEKKIJUTSU_INSPIRATIONS_DATA.map(k => ({ value: k.value, label: k.label }));
-export const ONI_ORIGIN_OPTIONS = ONIS_ORIGENS_DATA.map(o => ({ value: o.name, label: o.name }));
-export const HUNTER_ORIGIN_OPTIONS = PERSONAGENS_ORIGENS_DATA.map(o => ({ value: o.name, label: o.name }));
-export const SPECIAL_ABILITY_OPTIONS = HABILIDADES_ESPECIAIS_DATA.map(s => ({ value: s.name, label: s.name }));
-export const MISSION_TYPE_OPTIONS = CAMPANHAS_MISSOES_DATA.map(m => ({ value: m.value, label: m.label }));
-export const TERRAIN_TYPE_OPTIONS = LOCACOES_TERRENOS_DATA.map(t => ({ value: t.value, label: t.label }));
+export const ONI_ORIGIN_OPTIONS = ONI_ORIGINS_DATA.map(o => ({ value: o.nome, label: o.nome }));
+export const HUNTER_ORIGIN_OPTIONS = ORIGINS_DATA.map(o => ({ value: o.nome, label: o.nome }));
+export const SPECIAL_ABILITY_OPTIONS = SPECIAL_ABILITIES_DATA.map(s => ({ value: s.name, label: s.name }));
+export const MISSION_TYPE_OPTIONS = MISSION_TYPES_DATA.map(m => ({ value: m.value, label: m.label }));
+export const TERRAIN_TYPE_OPTIONS = TERRAIN_TYPES_DATA.map(t => ({ value: t.value, label: t.label }));
 export const EVENT_TYPE_OPTIONS = EVENT_TYPES_DATA.map(e => ({ value: e.value, label: e.label }));
 
-export const CLAN_OPTIONS = CONFLITOS_CLANS_DATA.map(c => ({ value: c.name, label: c.name }));
+export const CLAN_OPTIONS = CLAN_DATA.map(c => ({ value: c.name, label: c.name }));
 export const STRATEGY_OPTIONS = STRATEGY_DATA.map(s => ({ value: s.name, label: s.name }));
 
 export const HUNTER_CLASS_OPTIONS = HUNTER_CLASSES_DATA.map(c => ({ value: c.name, label: c.name }));
 export const FIGHTING_STYLE_OPTIONS = FIGHTING_STYLES_DATA.map(f => ({ value: f.name, label: f.name }));
 export const ONI_CLASS_OPTIONS = ONI_CLASSES_DATA.map(o => ({ value: o.name, label: o.name }));
-export const BLADE_COLOR_OPTIONS = BLADE_COLOR_DATA.map(c => ({ value: c.name, label: c.name }));
+export const BLADE_COLOR_OPTIONS = BLADE_COLOR_DATA.map(c => ({ value: c.nome, label: c.nome }));
 export const METAL_OPTIONS = METALS_DATA.map(m => ({ value: m.value, label: m.label }));
-export const TONALIDADE_OPTIONS = TONALIDADE_DATA.map(t => ({ value: t.name, label: t.name }));
+export const TONALIDADE_OPTIONS = TONALIDADE_DATA.map(t => ({ value: t.nome, label: t.nome }));
 
 export const CONFLICT_SCALES: SelectOption[] = [
     { value: 0, label: 'Duelo Pessoal' },
@@ -346,8 +235,8 @@ export const AI_MODELS: SelectOption[] = [
 
 export const COSMAKER_CHARACTER_TYPES: SelectOption[] = [{ value: 'cacador', label: 'Caçador' }, { value: 'oni', label: 'Oni' }];
 export const COSMAKER_ART_STYLES: SelectOption[] = [{ value: 'anime', label: 'Anime' }, { value: 'realista', label: 'Realista' }];
-export const COSMAKER_COLORS: SelectOption[] = [{ value: 'vermelho', label: 'Vermelho' }, { value: 'azul', label: 'Azul' }, { value: 'preto', label: 'Preto' }, { value: 'branco', label: 'Branco' }];
-export const COSMAKER_MATERIALS: SelectOption[] = [{ value: 'seda', label: 'Seda' }, { value: 'couro', label: 'Couro' }, { value: 'metal', label: 'Metal' }, { value: 'algodao', label: 'Algodão' }];
+export const COSMAKER_COLORS: SelectOption[] = [{ value: 'vermelho', label: 'Vermelho' }, { value: 'azul', label: 'Azul' }];
+export const COSMAKER_MATERIALS: SelectOption[] = [{ value: 'seda', label: 'Seda' }, { value: 'couro', label: 'Couro' }];
 
 export const VIDEO_ASPECT_RATIOS: SelectOption[] = [{ value: '16:9', label: '16:9 (Widescreen)' }, { value: '9:16', label: '9:16 (Vertical)' }];
 export const VIDEO_RESOLUTIONS: SelectOption[] = [{ value: '720p', label: '720p (HD)' }, { value: '1080p', label: '1080p (Full HD)' }];

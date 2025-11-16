@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import {
@@ -234,18 +235,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         <CollapsibleSection title="Filtros de Tema" defaultOpen>
             <motion.div className="space-y-4" variants={filterContainerVariants} initial="hidden" animate="visible">
               <motion.div variants={filterItemVariants}>
-                <SearchableMultiSelect label="Temática" options={TEMATICAS_DATA} value={TEMATICAS_DATA.filter(option => filters.thematics.includes(option.value as Tematica))} onChange={(v) => onFilterChange('thematics', v.map(i => i.value as Tematica))} placeholder="Selecione temáticas..." />
+                <SearchableMultiSelect label="Temática" options={TEMATICAS_DATA} value={filters.thematics.map(t => ({value: t, label: t}))} onChange={(v) => onFilterChange('thematics', v.map(i => i.value as Tematica))} placeholder="Selecione temáticas..." />
               </motion.div>
               <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Inspiração Cultural (País)" options={PAISES_DATA} value={PAISES_DATA.find(p => p.value === filters.country) || null} onChange={(v) => onFilterChange('country', v?.value as string)} />
+                <SearchableSelect label="Inspiração Cultural (País)" options={PAISES_DATA} value={PAISES_DATA.find(p => p.value === filters.country)} onChange={(v) => onFilterChange('country', v?.value as string)} />
               </motion.div>
               {eraOptions.length > 0 && (
                  <motion.div variants={filterItemVariants}>
-                  <SearchableSelect label="Era Histórica" options={eraOptions} value={eraOptions.find((e: any) => e.value === filters.era) || null} onChange={(v) => onFilterChange('era', v?.value as string)} placeholder='Aleatório' />
+                  <SearchableSelect label="Era Histórica" options={eraOptions} value={eraOptions.find(e => e.value === filters.era) || null} onChange={(v) => onFilterChange('era', v?.value as string)} placeholder='Aleatório' />
                  </motion.div>
               )}
               <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Tonalidade" options={TONALIDADE_OPTIONS} value={TONALIDADE_OPTIONS.find(t => t.value === filters.tonalidade) || null} onChange={(v) => onFilterChange('tonalidade', v?.value as string)} />
+                <SearchableSelect label="Tonalidade" options={TONALIDADE_OPTIONS} value={TONALIDADE_OPTIONS.find(t => t.value === filters.tonalidade)} onChange={(v) => onFilterChange('tonalidade', v?.value as string)} />
               </motion.div>
             </motion.div>
         </CollapsibleSection>

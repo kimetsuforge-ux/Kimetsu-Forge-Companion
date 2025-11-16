@@ -56,7 +56,6 @@
         .view-techniques { --accent-start: #F9A825; --accent-end: #FDD835; }
         .view-locations { --accent-start: #1B5E20; --accent-end: #4CAF50; }
         .view-conflicts { --accent-start: #D32F2F; --accent-end: #FF4444; }
-        .view-guerra_de_clas { --accent-start: #B8860B; --accent-end: #DAA520; }
         .view-master_tools { --accent-start: #FFD700; --accent-end: #7B1FA2; }
         .view-alchemist { --accent-start: #9B4DCA; --accent-end: #1A0033; }
         .view-cosmaker { --accent-start: #E91E63; --accent-end: #880E4F; }
@@ -98,26 +97,6 @@
         @keyframes hexPulse {
           0%, 100% { opacity: 0.3; transform: rotate(30deg) scale(0.98); }
           50% { opacity: 0.6; transform: rotate(30deg) scale(1); }
-        }
-
-        /* --- GUERRA DE CLÃS (Battlefield Embers) --- */
-        .view-guerra_de_clas .app-background {
-          background: radial-gradient(ellipse at bottom, rgba(74, 50, 11, 0.25) 0%, var(--bg-primary) 70%);
-        }
-        .ember-container { position: absolute; inset: 0; overflow: hidden; }
-        .ember {
-          position: absolute;
-          bottom: -10%;
-          background-color: rgba(218, 165, 32, 0.5);
-          border-radius: 50%;
-          opacity: 0;
-          animation: emberRise 20s infinite linear;
-          filter: blur(2px);
-        }
-        @keyframes emberRise {
-          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
-          10% { opacity: 0.8; }
-          100% { transform: translateY(-110vh) translateX(calc(var(--wind-direction, 0) * 150px)) scale(0.5); opacity: 0; }
         }
 
         /* --- FORJA (Sparks) --- */
@@ -300,8 +279,6 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "@vercel/analytics/": "https://aistudiocdn.com/@vercel/analytics@^1.5.0/",
-    "@vercel/speed-insights/": "https://aistudiocdn.com/@vercel/speed-insights@^1.2.0/",
     "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
     "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
@@ -310,10 +287,10 @@
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1",
     "@libsql/client": "https://aistudiocdn.com/@libsql/client@^0.15.15",
-    "cloudinary": "https://aistudiocdn.com/cloudinary@^2.8.0",
-    "imagekit": "https://aistudiocdn.com/imagekit@^6.0.0",
-    "firebase-admin": "https://aistudiocdn.com/firebase-admin@^13.6.0",
-    "googleapis": "https://aistudiocdn.com/googleapis@^166.0.0",
+    "cloudinary": "https://aistudiocdn.com/cloudinary@^2.2.0",
+    "imagekit": "https://aistudiocdn.com/imagekit@^5.0.1",
+    "firebase-admin": "https://aistudiocdn.com/firebase-admin@^12.2.0",
+    "googleapis": "https://aistudiocdn.com/googleapis@^140.0.1",
     "iron-session": "https://aistudiocdn.com/iron-session@^8.0.4",
     "next": "https://aistudiocdn.com/next@^16.0.3",
     "iron-session/": "https://aistudiocdn.com/iron-session@^8.0.4/"

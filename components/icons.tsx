@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const AnvilIcon = ({ className }: { className?: string }) => (
@@ -14,12 +15,6 @@ export const RefreshIcon = ({ className }: { className?: string }) => (
 
 export const ConflictsIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.884 2.116a1.25 1.25 0 0 0-1.768 0l-8.75 8.75a1.25 1.25 0 0 0 0 1.768l8.75 8.75a1.25 1.25 0 0 0 1.768-1.768L8.868 12l8.016-8.116a1.25 1.25 0 0 0 0-1.768Z M19.438 4.562l-2.5-2.5a1.25 1.25 0 1 0-1.768 1.768l.732.732L8.886 11.58a.25.25 0 0 0 0 .354l7.016 7.016 2.5-2.5a1.25 1.25 0 0 0-1.768-1.768l-.732-.732 7.016-7.016a1.25 1.25 0 0 0-1.768-1.768l-.732.732Z"/></svg>
-);
-
-export const GuerraDeClasIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path fillRule="evenodd" d="M3.75 3A.75.75 0 0 0 3 3.75v16.5a.75.75 0 0 0 1.085.67L12 17.63l7.915 3.29a.75.75 0 0 0 1.085-.67V3.75A.75.75 0 0 0 21 3H3.75ZM6 6a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H6.75A.75.75 0 0 1 6 6Zm0 3.75a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H6.75a.75.75 0 0 1-.75-.75Zm0 3.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5H6.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
-    </svg>
 );
 
 export const CharactersIcon = ({ className }: { className?: string }) => (

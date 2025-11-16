@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
@@ -31,34 +32,34 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
 
             <div className="flex-grow p-4 space-y-6">
                 <TextArea
-                    label="Descrição do Personagem"
-                    placeholder="Ex: Uma caçadora com longos cabelos brancos, usando um haori decorado com flores de lótus..."
+                    label="Descrição Visual do Personagem"
+                    placeholder="Ex: Um Hashira alto com cabelo branco prateado, usando um haori azul escuro com padrões de flocos de neve..."
                     rows={8}
                     value={filters.prompt}
                     onChange={(e) => updateFilter('prompt', e.target.value)}
                 />
 
-                <CollapsibleSection title="Estilo e Detalhes" defaultOpen>
+                <CollapsibleSection title="Estilo e Contexto" defaultOpen>
                     <div className="space-y-4">
-                         <Select 
+                        <Select 
                            label="Tipo de Personagem"
                            options={COSMAKER_CHARACTER_TYPES}
                            value={filters.characterType}
                            onChange={(val) => updateFilter('characterType', val)}
                         />
-                         <Select 
-                           label="Estilo de Arte"
-                           options={COSMAKER_ART_STYLES}
-                           value={filters.artStyle}
-                           onChange={(val) => updateFilter('artStyle', val)}
+                        <Select
+                            label="Estilo de Arte"
+                            options={COSMAKER_ART_STYLES}
+                            value={filters.artStyle}
+                            onChange={(val) => updateFilter('artStyle', val)}
                         />
                     </div>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Paleta e Materiais">
+                <CollapsibleSection title="Paleta e Materiais" defaultOpen>
                     <div className="space-y-4">
                        <SearchableMultiSelect 
-                            label="Cores Predominantes"
+                            label="Paleta de Cores"
                             options={COSMAKER_COLORS}
                             value={filters.colors}
                             onChange={(val) => updateFilter('colors', val)}
@@ -82,7 +83,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     onClick={onGenerate}
                     isLoading={isLoading}
                 >
-                    {isLoading ? 'Desenhando...' : 'Gerar Arte Conceitual'}
+                    {isLoading ? 'Criando Arte...' : 'Gerar Imagem'}
                 </Button>
             </div>
         </aside>

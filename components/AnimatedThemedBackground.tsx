@@ -1,8 +1,8 @@
+
 import React, { memo } from 'react';
 import type { View } from '../types';
 import { AlquimiaBackground } from './backgrounds/AlquimiaBackground';
 import { ConflitosBackground } from './backgrounds/ConflitosBackground';
-import { GuerraDeClasBackground } from './backgrounds/GuerraDeClasBackground';
 import { CosmakerBackground } from './backgrounds/CosmakerBackground';
 import { FilmmakerBackground } from './backgrounds/FilmmakerBackground';
 import { ForjaBackground } from './backgrounds/ForjaBackground';
@@ -18,7 +18,6 @@ const AnimatedThemedBackgroundComponent: React.FC<{ view: View }> = ({ view }) =
         switch (view) {
             case 'alchemist': return <AlquimiaBackground />;
             case 'conflicts': return <ConflitosBackground />;
-            case 'guerra_de_clas': return <GuerraDeClasBackground />;
             case 'cosmaker': return <CosmakerBackground />;
             case 'filmmaker': return <FilmmakerBackground />;
             case 'forge': return <ForjaBackground />;

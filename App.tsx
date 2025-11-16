@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AppProvider, useCoreUI, useAuth } from './contexts/AppContext';
+import { AppProvider, useCoreUI } from './contexts/AppContext';
 import type { ViewItem } from './types';
 import { VIEWS } from './constants';
 import { ViewRenderer } from './views/ViewRenderer';
@@ -10,8 +10,6 @@ import { DetailModal } from './components/modals/DetailModal';
 import { AnimatedThemedBackground } from './components/AnimatedThemedBackground';
 import { Button } from './components/ui/Button';
 import { Tooltip } from './components/ui/Tooltip';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 
 
 const App: React.FC = () => {
@@ -37,16 +35,6 @@ const KeyIcon = ({ className = '' }) => (
 
 const AppContent: React.FC = () => {
   const { activeView, setActiveView, themeClass, openAboutModal, openApiKeysModal } = useCoreUI();
-  const { isAuthenticated, user, logout, authLoading } = useAuth();
-
-  if (authLoading) {
-    return (
-        <div className="w-screen h-screen flex flex-col items-center justify-center bg-bg-primary gap-4">
-            <img src="https://i.imgur.com/M9BDKmO.png" alt="Kimetsu Forge Logo" className="w-24 h-24 opacity-80 animate-pulse" />
-            <p className="text-text-secondary">Verificando sua identidade...</p>
-        </div>
-    );
-  }
 
   return (
     <div className={`${themeClass} relative flex flex-col h-screen overflow-hidden font-sans bg-bg-primary text-text-primary`}>
@@ -79,16 +67,6 @@ const AppContent: React.FC = () => {
                         <KeyIcon />
                     </Button>
                 </Tooltip>
-                {isAuthenticated && user && (
-                    <div className="flex items-center gap-2 pl-2 border-l border-border-color">
-                         <Tooltip content={`Logado como ${user.username}`}>
-                            <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
-                         </Tooltip>
-                         <Button variant="secondary" size="sm" onClick={logout}>
-                             Sair
-                         </Button>
-                    </div>
-                )}
             </div>
         </header>
 
@@ -101,8 +79,6 @@ const AppContent: React.FC = () => {
       <AboutModal />
       <ApiKeysModal />
       <DetailModal />
-      <Analytics />
-      <SpeedInsights />
     </div>
   );
 };

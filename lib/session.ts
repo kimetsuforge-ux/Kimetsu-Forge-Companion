@@ -1,9 +1,7 @@
 // lib/session.ts
-// FIX: Use a direct type import for SessionOptions. This allows TypeScript's module resolver to correctly
-// find the 'iron-session' module for augmentation, fixing the "cannot be found" error.
-// Switched to a regular import to ensure module context is available for module augmentation, which can fail with type-only imports in some toolchains.
-// FIX: Corrected import from 'IronSessionOptions' to 'SessionOptions' as per the library's export.
-import { SessionOptions } from 'iron-session';
+import type { IronSessionOptions } from 'iron-session';
+// FIX: Add a side-effect import of 'iron-session' to make its types available for module augmentation.
+import 'iron-session';
 
 export interface SessionData {
   isLoggedIn: boolean;
@@ -16,10 +14,8 @@ if (!process.env.SECRET_COOKIE_PASSWORD) {
     throw new Error('A variável de ambiente SECRET_COOKIE_PASSWORD não está configurada.');
 }
 
-// FIX: Corrected type annotation to use 'SessionOptions' instead of 'IronSessionOptions'.
-export const sessionOptions: SessionOptions = {
-  // FIX: Add 'as string' to satisfy SessionOptions type, as env vars are string | undefined.
-  password: process.env.SECRET_COOKIE_PASSWORD as string,
+export const sessionOptions: IronSessionOptions = {
+  password: process.env.SECRET_COOKIE_PASSWORD,
   cookieName: 'kimetsu-forge-session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
