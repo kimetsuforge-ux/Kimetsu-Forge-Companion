@@ -80,22 +80,6 @@ function safeJsonParse(jsonString: string): any {
     }
 }
 
-/**
- * Robustly extracts the text content from a GenerateContentResponse.
- * @param result The response object from the Google GenAI API.
- * @returns The text content as a string.
- * @throws An error if no valid text part is found.
- */
-function getText(result: GenerateContentResponse): string {
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (text === undefined || text === null) {
-        console.error("Resposta da IA inválida. Faltando a parte de texto:", JSON.stringify(result, null, 2));
-        throw new Error("A IA não retornou uma resposta de texto válida no formato esperado.");
-    }
-    return text;
-}
-
-
 // FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
 // This allows TypeScript to correctly infer the type of `req` and include the `session` property.
 export default withIronSessionApiRoute(async function generateRoute(req, res: NextApiResponse) {
@@ -196,7 +180,7 @@ const handleForge = async (filters: any, ai: GoogleGenAI) => {
         }
     });
     
-    let parsedResult = safeJsonParse(getText(result));
+    let parsedResult = safeJsonParse(result.text);
 
     // Safeguard: if the model ignores instructions and returns a single object, wrap it in an array.
     if (!Array.isArray(parsedResult)) {
@@ -234,7 +218,7 @@ const handleConflicts = async (filters: any, ai: GoogleGenAI) => {
             }, required: ['name', 'synopsis', 'scale', 'missionType', 'factionsInvolved']
         }}
     });
-    return safeJsonParse(getText(result));
+    return safeJsonParse(result.text);
 };
 
 const handleCharacters = async (filters: any, ai: GoogleGenAI) => {
@@ -260,7 +244,7 @@ const handleCharacters = async (filters: any, ai: GoogleGenAI) => {
             }, required: ['name', 'affiliation', 'rank', 'appearance', 'personality', 'backstory', 'abilities']
         }}
     });
-    return safeJsonParse(getText(result));
+    return safeJsonParse(result.text);
 };
 
 const handleTechniques = async (filters: any, ai: GoogleGenAI) => {
@@ -284,7 +268,7 @@ const handleTechniques = async (filters: any, ai: GoogleGenAI) => {
             }, required: ['name', 'type', 'baseElement', 'description']
         }}
     });
-    return safeJsonParse(getText(result));
+    return safeJsonParse(result.text);
 };
 
 const handleLocations = async (filters: any, ai: GoogleGenAI) => {
@@ -308,7 +292,7 @@ const handleLocations = async (filters: any, ai: GoogleGenAI) => {
             }, required: ['name', 'biome', 'atmosphere', 'description', 'pointsOfInterest']
         }}
     });
-    return safeJsonParse(getText(result));
+    return safeJsonParse(result.text);
 };
 
 const handleMasterTools = async (filters: any, ai: GoogleGenAI) => {
@@ -338,7 +322,7 @@ const handleMasterTools = async (filters: any, ai: GoogleGenAI) => {
         responseMimeType: "application/json",
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }}
     });
-    return safeJsonParse(getText(result));
+    return safeJsonParse(result.text);
 };
 
 const handleAlchemist = async (filters: any, ai: GoogleGenAI) => {
@@ -351,7 +335,7 @@ const handleAlchemist = async (filters: any, ai: GoogleGenAI) => {
             temperature, topP, topK,
         }
     });
-    return { response: getText(result) };
+    return { response: result.text };
 };
 
 const handleCosmaker = async (filters: any, ai: GoogleGenAI) => {
@@ -389,5 +373,5 @@ const handleFilmmaker = async (filters: any, ai: GoogleGenAI) => {
         Foque na cinematografia, ângulos, iluminação, ação e atmosfera.
     `;
     const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: fullPrompt });
-    return { description: getText(result) };
+    return { description: result.text };
 };
