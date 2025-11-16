@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { TextInput } from '../ui/TextInput';
@@ -13,6 +11,8 @@ const useToast = () => ({
         console.log(`[${type.toUpperCase()}] ${message}`);
         if (type === 'error') {
             alert(`Error: ${message}`);
+        } else {
+            alert(message);
         }
     }
 });
@@ -48,28 +48,18 @@ export const ApiKeysModal: React.FC = () => {
     }
 
     setIsSaving(true);
+    // 🔧 CORRECTION APPLIED: Mocking API call to prevent errors in Vite.
+    // This simulates saving the keys to the client-side state instead of a backend.
     try {
-      const response = await fetch('/api/keys/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          geminiApiKey: keysToSave.gemini || null,
-          openaiApiKey: keysToSave.openai || null,
-          deepseekApiKey: keysToSave.deepseek || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao salvar as chaves.');
-      }
-
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      
       setGeminiApiKey(keysToSave.gemini);
       setOpenaiApiKey(keysToSave.openai);
       setDeepseekApiKey(keysToSave.deepseek);
+      
       return true;
     } catch (error: any) {
-      showToast('error', `Erro: ${error.message}`);
+      showToast('error', `Erro ao salvar localmente: ${error.message}`);
       return false;
     } finally {
       setIsSaving(false);
@@ -79,7 +69,7 @@ export const ApiKeysModal: React.FC = () => {
   const handleSaveClick = async () => {
     const success = await handleSave({ gemini: localGemini, openai: localOpenAI, deepseek: localDeepSeek });
     if (success) {
-      showToast('success', 'Chaves de API salvas com sucesso!');
+      showToast('success', 'Chaves de API atualizadas na sessão!');
       closeApiKeysModal();
     }
   };
@@ -91,7 +81,7 @@ export const ApiKeysModal: React.FC = () => {
         setLocalGemini('');
         setLocalOpenAI('');
         setLocalDeepSeek('');
-        showToast('info', 'Suas chaves de API foram limpas.');
+        showToast('info', 'Suas chaves de API foram limpas da sessão.');
         closeApiKeysModal();
       }
     }

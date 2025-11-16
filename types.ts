@@ -4,6 +4,7 @@ import type { FC } from 'react';
 export type View =
   | 'forge'
   | 'conflicts'
+  | 'guerra_de_clas'
   | 'characters'
   | 'techniques'
   | 'locations'
@@ -25,6 +26,17 @@ export type ConflictItem = {
   scale: string;
   missionType: string;
   factionsInvolved: string;
+  isFavorite?: boolean;
+};
+
+export type GuerraDeClasItem = {
+  id: string;
+  name: string;
+  attackingClan: string;
+  defendingClan: string;
+  synopsis: string;
+  keyEvents: string;
+  outcome: string;
   isFavorite?: boolean;
 };
 

@@ -10,6 +10,8 @@ import { DetailModal } from './components/modals/DetailModal';
 import { AnimatedThemedBackground } from './components/AnimatedThemedBackground';
 import { Button } from './components/ui/Button';
 import { Tooltip } from './components/ui/Tooltip';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 
 const App: React.FC = () => {
@@ -99,6 +101,8 @@ const AppContent: React.FC = () => {
       <AboutModal />
       <ApiKeysModal />
       <DetailModal />
+      <Analytics />
+      <SpeedInsights />
     </div>
   );
 };

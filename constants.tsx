@@ -1,8 +1,8 @@
-
 import type { Category, Rarity, FilterState, ViewItem } from './types';
 import { 
     AnvilIcon, 
     ConflictsIcon, 
+    GuerraDeClasIcon,
     CharactersIcon, 
     TechniquesIcon, 
     LocationsIcon, 
@@ -250,6 +250,7 @@ const METALS_DATA: { value: string, label: string }[] = [
 export const VIEWS: ViewItem[] = [
     { id: 'forge', label: 'Forja', icon: AnvilIcon },
     { id: 'conflicts', label: 'Guerra', icon: ConflictsIcon },
+    { id: 'guerra_de_clas', label: 'Guerra de Clãs', icon: GuerraDeClasIcon },
     { id: 'characters', label: 'Personagens', icon: CharactersIcon },
     { id: 'techniques', label: 'Técnicas', icon: TechniquesIcon },
     { id: 'locations', label: 'Mundo', icon: LocationsIcon },
@@ -345,8 +346,8 @@ export const AI_MODELS: SelectOption[] = [
 
 export const COSMAKER_CHARACTER_TYPES: SelectOption[] = [{ value: 'cacador', label: 'Caçador' }, { value: 'oni', label: 'Oni' }];
 export const COSMAKER_ART_STYLES: SelectOption[] = [{ value: 'anime', label: 'Anime' }, { value: 'realista', label: 'Realista' }];
-export const COSMAKER_COLORS: SelectOption[] = [{ value: 'vermelho', label: 'Vermelho' }, { value: 'azul', label: 'Azul' }];
-export const COSMAKER_MATERIALS: SelectOption[] = [{ value: 'seda', label: 'Seda' }, { value: 'couro', label: 'Couro' }];
+export const COSMAKER_COLORS: SelectOption[] = [{ value: 'vermelho', label: 'Vermelho' }, { value: 'azul', label: 'Azul' }, { value: 'preto', label: 'Preto' }, { value: 'branco', label: 'Branco' }];
+export const COSMAKER_MATERIALS: SelectOption[] = [{ value: 'seda', label: 'Seda' }, { value: 'couro', label: 'Couro' }, { value: 'metal', label: 'Metal' }, { value: 'algodao', label: 'Algodão' }];
 
 export const VIDEO_ASPECT_RATIOS: SelectOption[] = [{ value: '16:9', label: '16:9 (Widescreen)' }, { value: '9:16', label: '9:16 (Vertical)' }];
 export const VIDEO_RESOLUTIONS: SelectOption[] = [{ value: '720p', label: '720p (HD)' }, { value: '1080p', label: '1080p (Full HD)' }];

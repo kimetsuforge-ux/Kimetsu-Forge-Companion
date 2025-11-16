@@ -1,11 +1,8 @@
-
-
-
-
 import React from 'react';
 import type { View } from '../types';
 import ForgeInterface from './ForgeInterface';
 import ConflictsInterface from './ConflictsInterface';
+import GuerraDeClasInterface from './GuerraDeClasInterface';
 import CharactersInterface from './CharactersInterface';
 import TechniquesInterface from './TechniquesInterface';
 import LocationsInterface from './LocationsInterface';
@@ -21,6 +18,7 @@ import { VIEWS } from '../constants';
 const viewMap: Record<View, React.ComponentType> = {
   forge: ForgeInterface,
   conflicts: ConflictsInterface,
+  guerra_de_clas: GuerraDeClasInterface,
   characters: CharactersInterface,
   techniques: TechniquesInterface,
   locations: LocationsInterface,
