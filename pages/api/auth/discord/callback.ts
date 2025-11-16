@@ -1,11 +1,13 @@
 // pages/api/auth/discord/callback.ts
 import { withIronSessionApiRoute } from 'iron-session/next';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { sessionOptions } from '../../../../lib/session';
 import { exchangeCodeForToken, getUserProfile, constructAvatarUrl } from '../../../../lib/discord';
 import { isUserWhitelisted } from '../../../../lib/googleSheets';
 
-async function discordCallbackRoute(req: NextApiRequest, res: NextApiResponse) {
+// FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
+// This allows TypeScript to correctly infer the type of `req` and include the `session` property.
+export default withIronSessionApiRoute(async function discordCallbackRoute(req, res: NextApiResponse) {
   const { code, error } = req.query;
 
   if (error === 'access_denied' || !code || typeof code !== 'string') {
@@ -36,6 +38,4 @@ async function discordCallbackRoute(req: NextApiRequest, res: NextApiResponse) {
     console.error('Erro no callback do Discord:', err);
     res.redirect(`/?error=${encodeURIComponent(err.message)}`);
   }
-}
-
-export default withIronSessionApiRoute(discordCallbackRoute, sessionOptions);
+}, sessionOptions);

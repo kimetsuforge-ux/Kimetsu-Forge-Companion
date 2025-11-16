@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export const AnvilIcon = ({ className }: { className?: string }) => (
@@ -11,6 +12,12 @@ export const FilterIcon = ({ className }: { className?: string }) => (
 
 export const RefreshIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M12.03 2.53a.75.75 0 0 1 .75.75v1.854A8.995 8.995 0 0 1 21.75 12c0 4.969-4.032 9-9.001 9a8.995 8.995 0 0 1-8.72-6.533.75.75 0 0 1 1.48.266A7.495 7.495 0 0 0 12.75 19.5a7.495 7.495 0 0 0 7.499-7.5c0-3.86-2.903-7.04-6.75-7.442V6.384a.75.75 0 0 1-1.5 0V3.28a.75.75 0 0 1 .78-.75Z" clipRule="evenodd" /></svg>
+);
+
+export const MagicWandIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M14.25 21.414l-2.414-2.414-2.414 2.414a.75.75 0 01-1.06-1.06l2.413-2.415-2.413-2.415a.75.75 0 011.06-1.06l2.414 2.414 2.414-2.414a.75.75 0 011.06 1.06l-2.413 2.415 2.413 2.415a.75.75 0 01-1.06 1.06zM3.106 3.106a.75.75 0 011.06 0l2.415 2.413L4.167 7.93a.75.75 0 01-1.06-1.06L5.52 4.455 3.106 2.04a.75.75 0 010-1.06v1.126zM20.894 3.106a.75.75 0 010 1.06l-2.415 2.415 2.414 2.414a.75.75 0 01-1.06 1.06l-2.414-2.413-2.415 2.413a.75.75 0 01-1.06-1.06l2.414-2.414-2.414-2.414a.75.75 0 011.06-1.06l2.415 2.414 2.414-2.414a.75.75 0 011.06 0zM12 5.25a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5H12.75a.75.75 0 01-.75-.75zM10.5 8.25a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5H11.25a.75.75 0 01-.75-.75zM6 8.25a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5H6.75A.75.75 0 016 8.25zM7.5 11.25a.75.75 0 01.75-.75h.008a.75.75 0 010 1.5H8.25a.75.75 0 01-.75-.75z" />
+    </svg>
 );
 
 export const ConflictsIcon = ({ className }: { className?: string }) => (

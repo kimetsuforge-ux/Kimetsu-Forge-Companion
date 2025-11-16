@@ -1,6 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-// FIX: Updated import to use GoogleGenAI from @google/genai.
-import { GoogleGenAI } from "@google/genai";
 import { useCoreUI, useFilmmaker } from '../contexts/AppContext';
 import { FiltersPanel } from './filmmaker/FiltersPanel';
 import { ResultsPanel } from './filmmaker/ResultsPanel';
@@ -32,46 +30,39 @@ const FilmmakerInterface: React.FC = () => {
         setLoadingMessage('Escrevendo a cena...');
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("Nenhuma chave de API foi configurada.");
-            }
             if (!filters.prompt || !filters.aspectRatio || !filters.resolution) {
                 throw new Error("Por favor, insira um prompt e selecione a proporção e resolução.");
             }
 
-            const fullPrompt = `
-                Você é um diretor de cinema e roteirista.
-                Sua tarefa é criar uma descrição textual detalhada de uma cena de vídeo para o universo de Kimetsu no Yaiba.
-
-                - **Prompt da Cena:** ${filters.prompt}
-                - **Proporção:** ${filters.aspectRatio.label}
-                - **Resolução (Qualidade Visual):** ${filters.resolution.label}
-
-                Descreva a cena em um parágrafo vívido, incluindo detalhes sobre a cinematografia, ângulos de câmera, iluminação, ação e a atmosfera geral. Pinte um quadro com palavras.
-            `;
-            
-            // FIX: Updated API client initialization and usage to follow current @google/genai guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-
-            // FIX: Refactored generateContent call to use the modern SDK structure and a recommended model.
-            const result = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: fullPrompt,
-                config: {
-                    temperature: 0.8,
-                }
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'filmmaker', filters }),
             });
 
-            // FIX: Used the .text accessor for a direct response.
-            const textResponse = result.text;
-            if (!textResponse) {
+            const responseText = await res.text();
+
+            if (!res.ok) {
+                let message = 'Falha ao gerar a descrição da cena.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
+            }
+
+            const { description } = JSON.parse(responseText);
+
+            if (!description) {
                 throw new Error("A IA não retornou uma descrição de cena.");
             }
             
             const newItem: FilmmakerItem = {
                 id: `filmmaker-${Date.now()}`,
                 prompt: filters.prompt,
-                description: textResponse,
+                description: description,
                 isFavorite: false,
             };
             setHistory(prev => [newItem, ...prev]);

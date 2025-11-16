@@ -1,9 +1,4 @@
-
-
-
 import React, { useState, useCallback } from 'react';
-// FIX: Updated import to use GoogleGenAI from @google/genai.
-import { GoogleGenAI } from "@google/genai";
 import { useCoreUI, useMasterTools } from '../contexts/AppContext';
 import { FiltersPanel } from './master_tools/FiltersPanel';
 import { ResultsPanel } from './master_tools/ResultsPanel';
@@ -39,64 +34,32 @@ const MasterToolsInterface: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("A chave de API do Google Gemini não foi configurada.");
-            }
             if (!filters.toolType) {
                 throw new Error("Por favor, selecione uma ferramenta para usar.");
             }
 
-            let subCategory = '';
-            let instruction = '';
-            switch (filters.toolType.value) {
-                case 'name_generator':
-                    subCategory = `para a categoria "${filters.category?.label}"`;
-                    instruction = `Gere uma lista de ${filters.quantity} nomes japoneses únicos e criativos, adequados para o universo de Kimetsu no Yaiba.`;
-                    break;
-                case 'plot_hook_generator':
-                    subCategory = `para o gênero "${filters.genre?.label}"`;
-                    instruction = `Gere uma lista de ${filters.quantity} ganchos de trama (plot hooks) curtos e intrigantes, adequados para o universo de Kimetsu no Yaiba. Cada um deve ser uma única frase ou duas.`;
-                    break;
-                case 'onomatopoeia_generator':
-                    subCategory = `para sons de "${filters.soundType?.label}"`;
-                    instruction = `Gere uma lista de ${filters.quantity} onomatopeias japonesas (em romaji e com uma breve tradução/contexto) adequadas para um mangá no estilo Kimetsu no Yaiba. Exemplo: Zan! (som de corte rápido).`;
-                    break;
-                default:
-                    throw new Error("Ferramenta selecionada inválida.");
-            }
-
-            const contextText = filters.prompt ? `Considerando o seguinte contexto: "${filters.prompt}"` : '';
-            const fullPrompt = `
-              Você é um assistente criativo especializado no universo de Kimetsu no Yaiba.
-              Sua tarefa é usar a seguinte ferramenta: "${filters.toolType.label}".
-              ${contextText}
-              ${instruction}
-              ${subCategory}.
-              
-              Retorne APENAS a lista, com cada item em uma nova linha. Não inclua números, marcadores, títulos ou qualquer texto introdutório.
-            `;
-
-            // FIX: Updated API client initialization and usage to follow current @google/genai guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-
-            // FIX: Refactored generateContent call to use the modern SDK structure.
-            const result = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: fullPrompt,
-                config: { 
-                    temperature: 0.9, 
-                    topP: 0.95 
-                }
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'master_tools', filters }),
             });
 
-            // FIX: Used the .text accessor for a direct response.
-            const textResponse = result.text.trim();
-            if (!textResponse) {
-                throw new Error("A IA não retornou nenhum resultado. Tente novamente.");
+            const responseText = await res.text();
+
+            if (!res.ok) {
+                let message = 'Falha ao usar a ferramenta.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
             }
 
-            const resultsArray = textResponse.split('\n').filter(line => line.trim() !== '');
-            const newItems: MasterToolItem[] = resultsArray.map((content, index) => ({
+            const resultsArray = JSON.parse(responseText);
+
+            const newItems: MasterToolItem[] = resultsArray.map((content: string, index: number) => ({
                 id: `tool-${filters.toolType?.value}-${Date.now()}-${index}`,
                 content,
                 toolType: filters.toolType?.label || 'Desconhecido',

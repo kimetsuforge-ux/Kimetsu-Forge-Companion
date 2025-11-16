@@ -1,7 +1,8 @@
-
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+// FIX: Add `URL` and `fileURLToPath` imports to handle path resolution in an ES module context.
+import { URL, fileURLToPath } from 'url';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -9,6 +10,12 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+            },
+        },
       },
       plugins: [
         react({
@@ -42,7 +49,8 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          // FIX: Replaced `__dirname` with `import.meta.url` for compatibility with ES modules.
+          '@': fileURLToPath(new URL('.', import.meta.url)),
         },
         dedupe: ['react', 'react-dom']
       },

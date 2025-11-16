@@ -1,10 +1,4 @@
-
-
-
-
 import React, { useState, useCallback } from 'react';
-// FIX: Updated import to use GoogleGenAI and Type from @google/genai.
-import { GoogleGenAI, Type } from "@google/genai";
 import { useCoreUI, useLocations } from '../contexts/AppContext';
 import { FiltersPanel } from './locations/FiltersPanel';
 import { ResultsPanel } from './locations/ResultsPanel';
@@ -36,60 +30,30 @@ const LocationsInterface: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("A chave de API do Google Gemini não foi configurada.");
-            }
-             if (!filters.prompt || !filters.biome || !filters.atmosphere) {
+            if (!filters.prompt || !filters.biome || !filters.atmosphere) {
                 throw new Error("Por favor, descreva o conceito e selecione o bioma e a atmosfera do local.");
             }
 
-            const pointsOfInterestText = filters.generatePointsOfInterest
-                ? 'Adicionalmente, liste e descreva 3 a 5 pontos de interesse únicos dentro deste local.'
-                : '';
-
-            const fullPrompt = `
-              Você é um mestre cartógrafo e contador de histórias para o universo de Kimetsu no Yaiba.
-              Sua tarefa é gerar um local original com base nos seguintes parâmetros:
-    
-              - **Conceito Principal:** ${filters.prompt}
-              - **Bioma / Ambiente:** ${filters.biome?.label}
-              - **Atmosfera Predominante:** ${filters.atmosphere?.label}
-    
-              Gere uma descrição rica e detalhada para o local, focando em seus aspectos visuais, história (se houver) e como ele se encaixa no mundo de Kimetsu no Yaiba.
-              ${pointsOfInterestText}
-            `;
-
-            // FIX: Updated API client initialization and usage to follow current @google/genai guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-            
-            const responseSchema = {
-                // FIX: Used Type.OBJECT enum instead of string 'OBJECT'.
-                type: Type.OBJECT,
-                properties: {
-                    // FIX: Used Type.STRING enum for all properties.
-                    name: { type: Type.STRING, description: 'Um nome evocativo e apropriado para o local em português (Ex: Floresta do Eco Sussurrante, Vila da Cerejeira de Ferro).' },
-                    biome: { type: Type.STRING, description: 'O tipo de bioma do local (Ex: Floresta, Montanha).' },
-                    atmosphere: { type: Type.STRING, description: 'A atmosfera predominante do local (Ex: Misteriosa, Pacífica).' },
-                    description: { type: Type.STRING, description: `Uma descrição detalhada do local, sua aparência, sons, cheiros e a sensação geral que ele transmite.` },
-                    pointsOfInterest: { type: Type.STRING, description: `Uma lista e breve descrição dos pontos de interesse no local. Se não solicitado, deixe em branco.` }
-                },
-                required: ['name', 'biome', 'atmosphere', 'description', 'pointsOfInterest']
-            };
-
-            // FIX: Refactored generateContent call to use the modern SDK structure.
-            const result = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: fullPrompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: responseSchema,
-                    temperature: 0.7,
-                }
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'locations', filters }),
             });
 
-            // FIX: Used the .text accessor for a direct response.
-            const textResponse = result.text;
-            const parsedResponse = JSON.parse(textResponse);
+            const responseText = await res.text();
+
+            if (!res.ok) {
+                let message = 'Falha ao gerar local.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
+            }
+
+            const parsedResponse = JSON.parse(responseText);
 
             const newItem: LocationItem = {
                 id: `loc-${Date.now()}`,

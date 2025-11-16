@@ -1,10 +1,12 @@
 // pages/api/keys/save.ts
 import { withIronSessionApiRoute } from 'iron-session/next';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { sessionOptions } from '../../../lib/session';
 import { supabase, supabaseInitializationError } from '../../../lib/supabase';
 
-async function saveKeysRoute(req: NextApiRequest, res: NextApiResponse) {
+// FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
+// This allows TypeScript to correctly infer the type of `req` and include the `session` property.
+export default withIronSessionApiRoute(async function saveKeysRoute(req, res: NextApiResponse) {
     if (req.method !== 'POST') {
         res.setHeader('Allow', ['POST']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -45,6 +47,4 @@ async function saveKeysRoute(req: NextApiRequest, res: NextApiResponse) {
     } catch (err: any) {
         res.status(500).json({ message: err.message || 'Ocorreu um erro interno.' });
     }
-}
-
-export default withIronSessionApiRoute(saveKeysRoute, sessionOptions);
+}, sessionOptions);

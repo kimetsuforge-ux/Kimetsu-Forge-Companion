@@ -1,6 +1,8 @@
 
 
-import React, { createContext, useContext, useState, useMemo, ReactNode, useCallback } from 'react';
+
+
+import React, { createContext, useContext, useState, useMemo, ReactNode, useCallback, useEffect } from 'react';
 import type { View, CharacterItem, TechniqueItem, LocationItem, ConflictItem, MasterToolItem, AlchemistItem, CosmakerItem, FilmmakerItem, User, ApiKey, ForgeItem, FilterState } from '../types';
 import { INITIAL_FILTER_STATE } from '../constants';
 
@@ -27,7 +29,8 @@ interface CoreUIContextType {
 
 const CoreUIContext = createContext<CoreUIContextType | undefined>(undefined);
 
-export function CoreUIProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function CoreUIProvider({ children }: { children?: ReactNode }) {
   const [activeView, setActiveView] = useState<View>('forge');
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isDetailModalOpen, setDetailModalOpen] = useState(false);
@@ -92,17 +95,41 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function AuthProvider({ children }: { children?: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const isAuthenticated = !!user;
 
-  const handleLoginClick = useCallback(() => {
-    console.log("Simulating Discord OAuth flow: Redirecting to Discord for authentication...");
-    // In a real application, this would redirect to a Discord auth URL.
-    // For now, we'll just log in the mock user to dismiss the overlay and proceed.
-    setUser({ id: '1', name: 'Tanjiro', email: 'tanjiro@kimetsu.com' });
+  useEffect(() => {
+    // Check for user session on initial load
+    const checkUser = async () => {
+      const res = await fetch('/api/user');
+      const data = await res.json();
+      if (data.isLoggedIn) {
+        setUser({ id: data.id, name: data.username, email: '' }); // email is not available from this endpoint
+      }
+    };
+    checkUser();
   }, []);
-  const logout = useCallback(() => setUser(null), []);
+
+  const handleLoginClick = useCallback(async () => {
+    try {
+        const res = await fetch('/api/auth/discord/url');
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            console.error("Não foi possível obter a URL de login do Discord.");
+        }
+    } catch (error) {
+        console.error("Erro ao tentar fazer login com o Discord:", error);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+      await fetch('/api/logout');
+      setUser(null)
+  }, []);
 
   const value = useMemo(() => ({ user, isAuthenticated, handleLoginClick, logout }), [user, isAuthenticated, handleLoginClick, logout]);
 
@@ -129,7 +156,8 @@ interface ApiKeysContextType {
 
 const ApiKeysContext = createContext<ApiKeysContextType | undefined>(undefined);
 
-export function ApiKeysProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function ApiKeysProvider({ children }: { children?: ReactNode }) {
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [openaiApiKey, setOpenaiApiKey] = useState('');
   const [deepseekApiKey, setDeepseekApiKey] = useState('');
@@ -163,7 +191,8 @@ interface ForgeContextType {
 
 const ForgeContext = createContext<ForgeContextType | undefined>(undefined);
 
-export function ForgeProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function ForgeProvider({ children }: { children?: ReactNode }) {
     const [filters, setFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
     const [history, setHistory] = useState<ForgeItem[]>([]);
     const [favorites, setFavorites] = useState<ForgeItem[]>([]);
@@ -209,7 +238,8 @@ interface ConflictsContextType {
 
 const ConflictsContext = createContext<ConflictsContextType | undefined>(undefined);
 
-export function ConflictsProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function ConflictsProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<ConflictItem[]>([]);
     const [favorites, setFavorites] = useState<ConflictItem[]>([]);
 
@@ -253,7 +283,8 @@ interface CharactersContextType {
 
 const CharactersContext = createContext<CharactersContextType | undefined>(undefined);
 
-export function CharactersProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function CharactersProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<CharacterItem[]>([]);
     const [favorites, setFavorites] = useState<CharacterItem[]>([]);
 
@@ -296,7 +327,8 @@ interface TechniquesContextType {
 
 const TechniquesContext = createContext<TechniquesContextType | undefined>(undefined);
 
-export function TechniquesProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function TechniquesProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<TechniqueItem[]>([]);
     const [favorites, setFavorites] = useState<TechniqueItem[]>([]);
 
@@ -339,7 +371,8 @@ interface LocationsContextType {
 
 const LocationsContext = createContext<LocationsContextType | undefined>(undefined);
 
-export function LocationsProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function LocationsProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<LocationItem[]>([]);
     const [favorites, setFavorites] = useState<LocationItem[]>([]);
 
@@ -382,7 +415,8 @@ interface MasterToolsContextType {
 
 const MasterToolsContext = createContext<MasterToolsContextType | undefined>(undefined);
 
-export function MasterToolsProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function MasterToolsProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<MasterToolItem[]>([]);
     const [favorites, setFavorites] = useState<MasterToolItem[]>([]);
 
@@ -424,7 +458,8 @@ interface AlchemyContextType {
   toggleFavorite: (item: AlchemistItem) => void;
 }
 const AlchemyContext = createContext<AlchemyContextType | undefined>(undefined);
-export function AlchemyProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function AlchemyProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<AlchemistItem[]>([]);
     const [favorites, setFavorites] = useState<AlchemistItem[]>([]);
 
@@ -459,7 +494,8 @@ interface CosmakerContextType {
   toggleFavorite: (item: CosmakerItem) => void;
 }
 const CosmakerContext = createContext<CosmakerContextType | undefined>(undefined);
-export function CosmakerProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function CosmakerProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<CosmakerItem[]>([]);
     const [favorites, setFavorites] = useState<CosmakerItem[]>([]);
 
@@ -494,7 +530,8 @@ interface FilmmakerContextType {
   toggleFavorite: (item: FilmmakerItem) => void;
 }
 const FilmmakerContext = createContext<FilmmakerContextType | undefined>(undefined);
-export function FilmmakerProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function FilmmakerProvider({ children }: { children?: ReactNode }) {
     const [history, setHistory] = useState<FilmmakerItem[]>([]);
     const [favorites, setFavorites] = useState<FilmmakerItem[]>([]);
 
@@ -530,7 +567,8 @@ interface UsageContextType {
   incrementUsage: () => void;
 }
 const UsageContext = createContext<UsageContextType | undefined>(undefined);
-export function UsageProvider({ children }: { children: ReactNode }) {
+// FIX: Made children prop optional to resolve incorrect TypeScript errors.
+export function UsageProvider({ children }: { children?: ReactNode }) {
     const [dailyUsage, setDailyUsage] = useState(0);
     const usageLimit = 100;
     const isLimitReached = dailyUsage >= usageLimit;

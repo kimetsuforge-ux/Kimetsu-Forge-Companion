@@ -1,10 +1,4 @@
-
-
-
-
 import React, { useState, useCallback } from 'react';
-// FIX: Updated import to use GoogleGenAI from @google/genai.
-import { GoogleGenAI } from "@google/genai";
 import { useCoreUI, useAlchemy } from '../contexts/AppContext';
 import { FiltersPanel } from './alchemist/FiltersPanel';
 import { ResultsPanel } from './alchemist/ResultsPanel';
@@ -40,30 +34,31 @@ const AlchemistInterface: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("A chave de API do Google Gemini não foi configurada.");
-            }
             if (!filters.prompt || !filters.model) {
                 throw new Error("Por favor, insira um prompt e selecione um modelo de IA.");
             }
 
-            // FIX: Updated API client initialization and usage to follow current @google/genai guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-
-            // FIX: Refactored generateContent call to use the modern SDK structure.
-            const result = await ai.models.generateContent({
-                model: filters.model.value as string,
-                contents: filters.prompt,
-                config: {
-                    systemInstruction: filters.systemInstruction || undefined,
-                    temperature: filters.temperature,
-                    topP: filters.topP,
-                    topK: filters.topK,
-                }
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'alchemist', filters }),
             });
+
+            const responseText = await res.text();
+
+            if (!res.ok) {
+                let message = 'Falha na alquimia.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
+            }
+
+            const { response: textResponse } = JSON.parse(responseText);
             
-            // FIX: Used the .text accessor for a direct response.
-            const textResponse = result.text;
             if (!textResponse) {
                 throw new Error("A IA não retornou uma resposta.");
             }

@@ -10,8 +10,9 @@ import { useApiKeys, useAuth, useCoreUI } from '../../contexts/AppContext';
 const useToast = () => ({
     showToast: (type: 'success' | 'error' | 'info', message: string) => {
         console.log(`[${type.toUpperCase()}] ${message}`);
-        if (type === 'error') {
-            alert(`Error: ${message}`);
+        // Simple alert for user feedback in this context.
+        if (type === 'error' || type === 'success' || type === 'info') {
+            alert(`[${type.toUpperCase()}] ${message}`);
         }
     }
 });
@@ -25,20 +26,33 @@ export const ApiKeysModal: React.FC = () => {
     deepseekApiKey, setDeepseekApiKey
   } = useApiKeys();
 
-  const [localGemini, setLocalGemini] = useState(geminiApiKey);
-  const [localOpenAI, setLocalOpenAI] = useState(openaiApiKey);
-  const [localDeepSeek, setLocalDeepSeek] = useState(deepseekApiKey);
+  const [localGemini, setLocalGemini] = useState('');
+  const [localOpenAI, setLocalOpenAI] = useState('');
+  const [localDeepSeek, setLocalDeepSeek] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (isApiKeysModalOpen) {
-      setLocalGemini(geminiApiKey);
-      setLocalOpenAI(openaiApiKey);
-      setLocalDeepSeek(deepseekApiKey);
-    }
-  }, [isApiKeysModalOpen, geminiApiKey, openaiApiKey, deepseekApiKey]);
+    const fetchKeys = async () => {
+        if (isApiKeysModalOpen && user) {
+            try {
+                const res = await fetch('/api/keys/get');
+                if (res.ok) {
+                    const keys = await res.json();
+                    setLocalGemini(keys.geminiApiKey || '');
+                    setLocalOpenAI(keys.openaiApiKey || '');
+                    setLocalDeepSeek(keys.deepseekApiKey || '');
+                } else {
+                    showToast('error', 'Não foi possível carregar as chaves de API salvas.');
+                }
+            } catch (error) {
+                showToast('error', 'Erro de rede ao buscar chaves de API.');
+            }
+        }
+    };
+    fetchKeys();
+  }, [isApiKeysModalOpen, user]);
 
   const handleSave = async (keysToSave: { gemini: string; openai: string; deepseek: string; }) => {
     if (!user) {
@@ -48,14 +62,21 @@ export const ApiKeysModal: React.FC = () => {
 
     setIsSaving(true);
     try {
-      // This simulates the API call from the user's prompt without breaking the app
-      console.log("Simulating API call to /api/keys/save with user:", user.id, "and keys:", {
-          geminiApiKey: keysToSave.gemini || null,
-          openaiApiKey: keysToSave.openai || null,
-          deepseekApiKey: keysToSave.deepseek || null,
+      const res = await fetch('/api/keys/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              geminiApiKey: keysToSave.gemini,
+              openaiApiKey: keysToSave.openai,
+              deepseekApiKey: keysToSave.deepseek,
+          }),
       });
-      await new Promise(resolve => setTimeout(resolve, 500));
 
+      if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Falha ao salvar as chaves.');
+      }
+      
       setGeminiApiKey(keysToSave.gemini);
       setOpenaiApiKey(keysToSave.openai);
       setDeepseekApiKey(keysToSave.deepseek);

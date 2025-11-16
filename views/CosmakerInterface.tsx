@@ -1,10 +1,4 @@
-
-
-
-
 import React, { useState, useCallback } from 'react';
-// FIX: Updated import to use GoogleGenAI and Modality from @google/genai.
-import { GoogleGenAI, Modality } from "@google/genai";
 import { useCoreUI } from '../contexts/AppContext';
 import { useCosmaker } from '../contexts/AppContext';
 import { FiltersPanel } from './cosmaker/FiltersPanel';
@@ -39,63 +33,40 @@ const CosmakerInterface: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("A chave de API do Google Gemini não foi configurada.");
-            }
             if (!filters.prompt || !filters.artStyle) {
                 throw new Error("Por favor, descreva o conceito do personagem e selecione um estilo de arte.");
             }
 
-            const colorText = filters.colors.length > 0 ? `com uma paleta de cores principal de ${filters.colors.map(c => c.label).join(', ')}` : '';
-            const materialText = filters.materials.length > 0 ? `usando materiais como ${filters.materials.map(m => m.label).join(', ')}` : '';
-
-            const fullPrompt = `
-                Crie um conceito de arte de um personagem do universo de Kimetsu no Yaiba no estilo "${filters.artStyle.label}".
-                
-                **Descrição do Personagem:** ${filters.prompt}
-                **Tipo de Personagem:** ${filters.characterType?.label || 'Não especificado'}
-                ${colorText}
-                ${materialText}
-
-                Foque nos detalhes do traje, acessórios e na aparência geral para criar uma imagem visualmente rica e coesa.
-            `;
-
-            // FIX: Updated API client initialization and usage for image generation.
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            
-            // FIX: Corrected the API call to use 'gemini-2.5-flash-image' and 'responseModalities' for proper image generation.
-            const result = await ai.models.generateContent({
-              model: 'gemini-2.5-flash-image',
-              contents: {
-                parts: [
-                  {
-                    text: fullPrompt,
-                  },
-                ],
-              },
-              config: {
-                  responseModalities: [Modality.IMAGE],
-              },
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'cosmaker', filters }),
             });
 
-            const imagePart = result.candidates?.[0]?.content?.parts?.find(
-                (part: any) => part.inlineData && part.inlineData.mimeType.startsWith('image/')
-            );
+            const responseText = await res.text();
 
-            if (imagePart && imagePart.inlineData) {
-                const base64ImageBytes: string = imagePart.inlineData.data;
-                const mimeType: string = imagePart.inlineData.mimeType;
-                const imageUrl = `data:${mimeType};base64,${base64ImageBytes}`;
-                
+            if (!res.ok) {
+                let message = 'Falha ao gerar imagem.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
+            }
+            
+            const { imageUrl, prompt } = JSON.parse(responseText);
+
+            if (imageUrl) {
                 const newItem: CosmakerItem = {
                     id: `cosmaker-${Date.now()}`,
-                    prompt: fullPrompt,
+                    prompt: prompt,
                     imageUrl,
                     isFavorite: false,
                 };
                 setHistory(prev => [newItem, ...prev]);
             } else {
-                console.error("API response did not contain a valid image part:", result);
                 throw new Error("A IA não retornou uma imagem válida. Tente refinar seu prompt ou tente novamente mais tarde.");
             }
 

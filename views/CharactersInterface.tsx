@@ -1,10 +1,4 @@
-
-
-
-
 import React, { useState, useCallback, useEffect } from 'react';
-// FIX: Updated import to use GoogleGenAI and Type from @google/genai.
-import { GoogleGenAI, Type } from "@google/genai";
 import { useCoreUI, useCharacters } from '../contexts/AppContext';
 import { FiltersPanel } from './characters/FiltersPanel';
 import { ResultsPanel } from './characters/ResultsPanel';
@@ -33,7 +27,6 @@ const CharactersInterface: React.FC = () => {
     const { history, setHistory, toggleFavorite } = useCharacters();
     const [filters, setFilters] = useState<CharacterFiltersState>(initialFiltersState);
 
-    // Effect to update rank options when affiliation changes
     useEffect(() => {
         if (filters.affiliation?.value === 'demon_slayer') {
             setFilters(f => ({ ...f, rank: DEMON_SLAYER_RANKS[0] }));
@@ -49,63 +42,30 @@ const CharactersInterface: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("A chave de API do Google Gemini não foi configurada.");
-            }
-             if (!filters.prompt || !filters.affiliation) {
+            if (!filters.prompt || !filters.affiliation) {
                 throw new Error("Por favor, descreva o conceito do personagem e selecione uma afiliação.");
             }
 
-            const abilityText = filters.generateUniqueAbility 
-                ? `Crie uma ${filters.affiliation.value === 'demon' ? 'Arte Demoníaca de Sangue (Kekkijutsu)' : 'Técnica de Respiração'} completamente nova e original para este personagem.`
-                : 'Use habilidades e técnicas que sejam comuns para a afiliação e classe do personagem.';
-
-            const fullPrompt = `
-              Você é um mestre criador de personagens para o universo de Kimetsu no Yaiba.
-              Sua tarefa é gerar um personagem original com base nos seguintes parâmetros:
-    
-              - **Conceito Principal:** ${filters.prompt}
-              - **Afiliação:** ${filters.affiliation?.label}
-              - **Classe/Nível:** ${filters.rank?.label || 'Não especificado'}
-              - **Traços de Personalidade Chave:** ${filters.personalityTraits.map(p => p.label).join(', ') || 'Deixe a IA decidir'}
-              - **Habilidades:** ${abilityText}
-    
-              Gere um personagem completo, incluindo nome, aparência, personalidade detalhada, história de fundo (backstory) e uma descrição de suas habilidades.
-            `;
-
-            // FIX: Updated API client initialization and usage to follow current @google/genai guidelines.
-            const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-            
-            const responseSchema = {
-                // FIX: Used Type.OBJECT enum instead of string 'OBJECT'.
-                type: Type.OBJECT,
-                properties: {
-                    // FIX: Used Type.STRING enum for all properties.
-                    name: { type: Type.STRING, description: 'Um nome japonês completo e apropriado para o personagem.' },
-                    affiliation: { type: Type.STRING, description: 'A afiliação do personagem (Ex: Caçador de Onis).' },
-                    rank: { type: Type.STRING, description: 'A classe ou nível do personagem (Ex: Hashira, Lua Superior).' },
-                    appearance: { type: Type.STRING, description: 'Uma descrição detalhada da aparência física e vestimentas do personagem.' },
-                    personality: { type: Type.STRING, description: 'Uma descrição aprofundada da personalidade, motivações e medos do personagem.' },
-                    backstory: { type: Type.STRING, description: 'Uma história de fundo concisa, mas impactante, para o personagem.' },
-                    abilities: { type: Type.STRING, description: `Uma descrição detalhada das habilidades, incluindo a ${filters.affiliation.value === 'demon' ? 'Arte Demoníaca de Sangue' : 'Técnica de Respiração'}.` }
-                },
-                required: ['name', 'affiliation', 'rank', 'appearance', 'personality', 'backstory', 'abilities']
-            };
-
-            // FIX: Refactored generateContent call to use the modern SDK structure.
-            const result = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: fullPrompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: responseSchema,
-                    temperature: 0.8,
-                }
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ view: 'characters', filters }),
             });
 
-            // FIX: Used the .text accessor for a direct response.
-            const textResponse = result.text;
-            const parsedResponse = JSON.parse(textResponse);
+            const responseText = await res.text();
+
+            if (!res.ok) {
+                let message = 'Falha ao gerar personagem.';
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || message;
+                } catch (e) {
+                    console.error("Non-JSON error response from server:", responseText);
+                }
+                throw new Error(message);
+            }
+
+            const parsedResponse = JSON.parse(responseText);
 
             const newItem: CharacterItem = {
                 id: `char-${Date.now()}`,

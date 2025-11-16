@@ -1,10 +1,12 @@
 // pages/api/keys/get.ts
 import { withIronSessionApiRoute } from 'iron-session/next';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { sessionOptions } from '../../../lib/session';
 import { supabase, supabaseInitializationError } from '../../../lib/supabase';
 
-async function getKeysRoute(req: NextApiRequest, res: NextApiResponse) {
+// FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
+// This allows TypeScript to correctly infer the type of `req` and include the `session` property.
+export default withIronSessionApiRoute(async function getKeysRoute(req, res: NextApiResponse) {
     if (req.method !== 'GET') {
         res.setHeader('Allow', ['GET']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -41,6 +43,4 @@ async function getKeysRoute(req: NextApiRequest, res: NextApiResponse) {
     } catch (err: any) {
         res.status(500).json({ message: err.message || 'Ocorreu um erro interno.' });
     }
-}
-
-export default withIronSessionApiRoute(getKeysRoute, sessionOptions);
+}, sessionOptions);

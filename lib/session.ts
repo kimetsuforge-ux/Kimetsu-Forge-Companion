@@ -1,7 +1,5 @@
 // lib/session.ts
-import type { IronSessionOptions } from 'iron-session';
-// FIX: Add a side-effect import of 'iron-session' to make its types available for module augmentation.
-import 'iron-session';
+import { SessionOptions } from 'iron-session';
 
 export interface SessionData {
   isLoggedIn: boolean;
@@ -14,7 +12,7 @@ if (!process.env.SECRET_COOKIE_PASSWORD) {
     throw new Error('A variável de ambiente SECRET_COOKIE_PASSWORD não está configurada.');
 }
 
-export const sessionOptions: IronSessionOptions = {
+export const sessionOptions: SessionOptions = {
   password: process.env.SECRET_COOKIE_PASSWORD,
   cookieName: 'kimetsu-forge-session',
   cookieOptions: {

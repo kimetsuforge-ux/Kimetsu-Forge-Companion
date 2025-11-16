@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AppProvider, useCoreUI } from './contexts/AppContext';
 import type { ViewItem } from './types';
@@ -12,7 +13,8 @@ import { Button } from './components/ui/Button';
 import { Tooltip } from './components/ui/Tooltip';
 
 
-const App: React.FC = () => {
+// FIX: Removed React.FC for modern best practices, which can resolve subtle type inference issues.
+const App = () => {
   return (
     <AppProvider>
       <AppContent />
@@ -33,7 +35,8 @@ const KeyIcon = ({ className = '' }) => (
 );
 
 
-const AppContent: React.FC = () => {
+// FIX: Removed React.FC for modern best practices.
+const AppContent = () => {
   const { activeView, setActiveView, themeClass, openAboutModal, openApiKeysModal } = useCoreUI();
 
   return (
