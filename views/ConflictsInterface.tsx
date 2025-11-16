@@ -111,8 +111,8 @@ const ConflictsInterface: React.FC = () => {
                 onRetry={handleGenerate}
 // FIX: Cast handler to 'any' to resolve type incompatibility between GeneratedItem and ConflictItem.
                 onViewDetails={handleViewDetails as any}
-// FIX: Cast handler to '(item: ConflictItem) => void' to resolve type incompatibility.
-                onToggleFavorite={toggleFavorite as (item: ConflictItem) => void}
+// FIX: Cast handler to `any` to resolve type incompatibility between GeneratedItem and ConflictItem, which was causing a type error.
+                onToggleFavorite={toggleFavorite as any}
             />
         </div>
     );
