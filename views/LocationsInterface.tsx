@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { useCoreUI, useLocations } from '../contexts/AppContext';
+// FIX: Replaced non-existent hooks with correct ones from AppContext
+import { useAppCore, useForge } from '../contexts/AppContext';
 import { FiltersPanel } from './locations/FiltersPanel';
 import { ResultsPanel } from './locations/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
-import type { LocationItem } from '../types';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported LocationItem from types.ts
+import type { LocationItem, GeneratedItem } from '../types';
+// FIX: Imported constants
 import { LOCATION_BIOMES, LOCATION_ATMOSPHERES } from '../constants';
 
 export interface LocationFiltersState {
@@ -21,12 +25,13 @@ const initialFiltersState: LocationFiltersState = {
 };
 
 const LocationsInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError, openDetailModal } = useCoreUI();
-    const { history, setHistory, toggleFavorite } = useLocations();
+    // FIX: Corrected hook usage
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    const { history, addHistoryItem, toggleFavorite, setSelectedItem: openDetailModal } = useForge();
     const [filters, setFilters] = useState<LocationFiltersState>(initialFiltersState);
     
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
@@ -55,24 +60,38 @@ const LocationsInterface: React.FC = () => {
 
             const parsedResponse = JSON.parse(responseText);
 
-            const newItem: LocationItem = {
+            const newItem: GeneratedItem = {
                 id: `loc-${Date.now()}`,
+                nome: parsedResponse.name,
+                descricao: parsedResponse.description,
+                descricao_curta: parsedResponse.description.substring(0, 100) + '...',
+                categoria: 'Local/Cenário',
+                is_favorite: false,
+                createdAt: new Date().toISOString(),
                 ...parsedResponse,
-                isFavorite: false,
+                raridade: 'Incomum',
+                nivel_sugerido: 5,
+                ganchos_narrativos: [],
             };
-            setHistory(prev => [newItem, ...prev]);
+            addHistoryItem(newItem);
 
         } catch (e: any) {
             console.error("Erro durante a criação de local:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
 
-    const handleViewDetails = (item: LocationItem) => {
-        openDetailModal(item);
+    const handleViewDetails = (item: GeneratedItem) => {
+        const detailItem = {
+            ...item,
+            content: `${item.descricao}\n\n**Pontos de Interesse:**\n${(item as any).pointsOfInterest || 'Nenhum'}`,
+        }
+        openDetailModal(detailItem);
     };
+
+    const locationHistory = history.filter(item => item.categoria === 'Local/Cenário');
 
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -80,16 +99,16 @@ const LocationsInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialFiltersState)}
             />
             <ResultsPanel
-                results={history}
-                isLoading={isLoading}
-                error={error}
+                results={locationHistory as unknown as LocationItem[]}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleGenerate}
-                onViewDetails={handleViewDetails}
-                onToggleFavorite={toggleFavorite}
+                onViewDetails={handleViewDetails as any}
+                onToggleFavorite={toggleFavorite as any}
             />
         </div>
     );

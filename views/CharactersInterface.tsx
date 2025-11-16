@@ -1,9 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useCoreUI, useCharacters } from '../contexts/AppContext';
+// FIX: Replaced non-existent hooks with correct ones from AppContext
+import { useAppCore, useForge } from '../contexts/AppContext';
 import { FiltersPanel } from './characters/FiltersPanel';
 import { ResultsPanel } from './characters/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
-import type { CharacterItem } from '../types';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported CharacterItem from types.ts
+import type { CharacterItem, GeneratedItem } from '../types';
+// FIX: Imported constants
 import { CHARACTER_AFFILIATIONS, DEMON_SLAYER_RANKS, DEMON_RANKS } from '../constants';
 
 export interface CharacterFiltersState {
@@ -23,8 +27,9 @@ const initialFiltersState: CharacterFiltersState = {
 };
 
 const CharactersInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError, openDetailModal } = useCoreUI();
-    const { history, setHistory, toggleFavorite } = useCharacters();
+    // FIX: Corrected hook usage
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    const { history, addHistoryItem, toggleFavorite, setSelectedItem: openDetailModal } = useForge();
     const [filters, setFilters] = useState<CharacterFiltersState>(initialFiltersState);
 
     useEffect(() => {
@@ -38,7 +43,7 @@ const CharactersInterface: React.FC = () => {
     }, [filters.affiliation]);
     
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
@@ -67,24 +72,39 @@ const CharactersInterface: React.FC = () => {
 
             const parsedResponse = JSON.parse(responseText);
 
-            const newItem: CharacterItem = {
+            const newItem: GeneratedItem = {
                 id: `char-${Date.now()}`,
+                nome: parsedResponse.name,
+                descricao: parsedResponse.backstory,
+                descricao_curta: parsedResponse.backstory.substring(0,100) + '...',
+                categoria: filters.affiliation.value === 'demon' ? 'Inimigo/Oni' : 'Caçador',
+                is_favorite: false,
+                createdAt: new Date().toISOString(),
                 ...parsedResponse,
-                isFavorite: false,
+                raridade: 'Rara',
+                nivel_sugerido: 10,
+                ganchos_narrativos: [],
             };
-            setHistory(prev => [newItem, ...prev]);
+            addHistoryItem(newItem);
 
         } catch (e: any) {
             console.error("Erro durante a criação de personagem:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
 
-    const handleViewDetails = (item: CharacterItem) => {
-        openDetailModal(item);
+    const handleViewDetails = (item: GeneratedItem) => {
+        // FIX: Add content property for DetailModal compatibility
+        const detailItem = {
+            ...item,
+            content: `**Aparência:**\n${(item as any).appearance}\n\n**Personalidade:**\n${(item as any).personality}\n\n**História:**\n${(item as any).backstory}\n\n**Habilidades:**\n${(item as any).abilities}`,
+        }
+        openDetailModal(detailItem);
     };
+    
+    const characterHistory = history.filter(item => item.categoria === 'Caçador' || item.categoria === 'Inimigo/Oni' || item.categoria === 'NPC');
 
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -92,16 +112,16 @@ const CharactersInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialFiltersState)}
             />
             <ResultsPanel
-                results={history}
-                isLoading={isLoading}
-                error={error}
+                results={characterHistory as unknown as CharacterItem[]}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleGenerate}
-                onViewDetails={handleViewDetails}
-                onToggleFavorite={toggleFavorite}
+                onViewDetails={handleViewDetails as any}
+                onToggleFavorite={toggleFavorite as any}
             />
         </div>
     );

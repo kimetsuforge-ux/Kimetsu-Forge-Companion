@@ -1,12 +1,14 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
-import { SearchableMultiSelect, Select } from '../../components/ui/Select';
+// FIX: Import from ui barrel file
+import { SearchableMultiSelect, Select } from '../../components/ui';
 import { Switch } from '../../components/ui/Switch';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { CHARACTER_AFFILIATIONS, DEMON_RANKS, DEMON_SLAYER_RANKS, PERSONALITY_TRAITS } from '../../constants';
 import type { CharacterFiltersState } from '../CharactersInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: CharacterFiltersState;
@@ -22,7 +24,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
         setFilters(prev => ({...prev, [key]: value}));
     };
 
-    const getRankOptions = () => {
+    const getRankOptions = (): SelectOption[] => {
         switch (filters.affiliation?.value) {
             case 'demon_slayer':
                 return DEMON_SLAYER_RANKS;
@@ -56,15 +58,15 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Afiliação"
                            options={CHARACTER_AFFILIATIONS}
-                           value={filters.affiliation}
-                           onChange={(val) => updateFilter('affiliation', val)}
+                           value={filters.affiliation?.value as string}
+                           onChange={(val) => updateFilter('affiliation', CHARACTER_AFFILIATIONS.find(o => o.value === val) || null)}
                         />
                         {getRankOptions().length > 0 && (
                             <Select
                                 label="Classe / Nível"
                                 options={getRankOptions()}
-                                value={filters.rank}
-                                onChange={(val) => updateFilter('rank', val)}
+                                value={filters.rank?.value as string}
+                                onChange={(val) => updateFilter('rank', getRankOptions().find(o => o.value === val) || null)}
                             />
                         )}
                     </div>
@@ -75,14 +77,15 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <SearchableMultiSelect 
                             label="Traços de Personalidade"
                             options={PERSONALITY_TRAITS}
-                            value={filters.personalityTraits}
-                            onChange={(val) => updateFilter('personalityTraits', val)}
+                            selected={filters.personalityTraits.map(p => p.value as string)}
+                            onChange={(vals) => updateFilter('personalityTraits', vals.map(v => PERSONALITY_TRAITS.find(o => o.value === v)).filter(Boolean) as SelectOption[])}
                             placeholder="Selecione traços..."
                        />
                        <Switch 
                             label="Gerar Habilidade Única"
                             checked={filters.generateUniqueAbility}
-                            onChange={(val) => updateFilter('generateUniqueAbility', val)}
+                            // FIX: pass boolean value from event
+                            onChange={(e) => updateFilter('generateUniqueAbility', e.target.checked)}
                        />
                     </div>
                 </CollapsibleSection>
@@ -93,6 +96,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Criando...' : 'Gerar Personagem'}

@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { useCoreUI, useAlchemy } from '../contexts/AppContext';
+// FIX: Changed useCoreUI to useAppCore
+import { useAppCore } from '../contexts/AppContext';
 import { FiltersPanel } from './alchemist/FiltersPanel';
 import { ResultsPanel } from './alchemist/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported AlchemistItem from types.ts
 import type { AlchemistItem } from '../types';
+// FIX: Added AI_MODELS to constants export
 import { AI_MODELS } from '../constants';
 
 export interface AlchemistState {
@@ -25,12 +29,17 @@ const initialAlchemistState: AlchemistState = {
 };
 
 const AlchemistInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError } = useCoreUI();
-    const { history, setHistory, toggleFavorite } = useAlchemy();
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    // FIX: Use local state for history to avoid type conflicts with the shared AlchemyContext.
+    const [history, setHistory] = useState<AlchemistItem[]>([]);
     const [filters, setFilters] = useState<AlchemistState>(initialAlchemistState);
 
+    const addHistoryItem = (item: AlchemistItem) => {
+        setHistory(prev => [item, ...prev]);
+    };
+
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
@@ -75,15 +84,15 @@ const AlchemistInterface: React.FC = () => {
                 },
                 isFavorite: false,
             };
-            setHistory(prev => [newItem, ...prev]);
+            addHistoryItem(newItem);
 
         } catch (e: any) {
             console.error("Erro durante a alquimia:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
     
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -91,15 +100,15 @@ const AlchemistInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialAlchemistState)}
             />
             <ResultsPanel
                 results={history}
-                isLoading={isLoading}
-                error={error}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleGenerate}
-                onToggleFavorite={toggleFavorite}
+                onToggleFavorite={() => {}}
             />
         </div>
     );

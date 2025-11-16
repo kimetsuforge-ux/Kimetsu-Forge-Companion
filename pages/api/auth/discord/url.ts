@@ -1,37 +1,24 @@
 // pages/api/auth/discord/url.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-type ResponseData = {
-  url?: string;
-  message?: string;
-};
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    const redirectUri = process.env.DISCORD_REDIRECT_URI;
+    
+    if (!clientId || !redirectUri) {
+        return res.status(500).json({ message: 'Configuração de autenticação do Discord incompleta no servidor.' });
+    }
 
-export default function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
+    const scope = 'identify email'; // Escopos necessários
 
-  const { DISCORD_CLIENT_ID, DISCORD_REDIRECT_URI } = process.env;
+    const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope,
+    });
 
-  if (!DISCORD_CLIENT_ID || !DISCORD_REDIRECT_URI) {
-    console.error('Variáveis de ambiente do Discord não configuradas.');
-    return res.status(500).json({ message: 'Erro de configuração do servidor.' });
-  }
+    const authorizationUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
 
-  const scope = ['identify', 'email'].join(' ');
-  
-  const params = new URLSearchParams({
-    client_id: DISCORD_CLIENT_ID,
-    redirect_uri: DISCORD_REDIRECT_URI,
-    response_type: 'code',
-    scope,
-  });
-
-  const authorizationUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
-
-  res.status(200).json({ url: authorizationUrl });
+    res.status(200).json({ url: authorizationUrl });
 }

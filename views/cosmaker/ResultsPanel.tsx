@@ -1,6 +1,7 @@
-
 import React from 'react';
+// FIX: Import CosmakerItem (now defined in types.ts)
 import type { CosmakerItem } from '../../types';
+// FIX: CardContent is now exported from Card.tsx
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';

@@ -1,5 +1,7 @@
 import React from 'react';
+// FIX: Import ConflictItem (now defined in types.ts)
 import type { ConflictItem } from '../../types';
+// FIX: Card sub-components are now exported from Card.tsx
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';

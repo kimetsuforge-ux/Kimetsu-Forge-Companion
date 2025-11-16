@@ -27,3 +27,6 @@ declare module 'iron-session' {
     user?: SessionData;
   }
 }
+
+// FIX: Added empty export to ensure this file is treated as a module, fixing augmentation issues.
+export {};

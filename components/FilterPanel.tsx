@@ -1,8 +1,6 @@
-
-
-
-
+// components/FilterPanel.tsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+// FIX: Import Variants type from framer-motion to strongly type animation variants.
 import { motion, type Variants } from 'framer-motion';
 import {
   CATEGORIES, RARITIES, WEAPON_OPTIONS,
@@ -13,19 +11,20 @@ import {
   TONALIDADE_OPTIONS, CLAN_OPTIONS, STRATEGY_OPTIONS, METAL_OPTIONS, ERAS_DATA,
   BREATHING_STYLE_OPTIONS
 } from '../constants';
-import type { FilterState, Tematica, Category, Rarity } from '../types';
-import { Button, CollapsibleSection, NumberInput, SearchableMultiSelect, SearchableSelect, Slider, Spinner, TextArea, Tooltip, type SelectOption } from './ui';
-import { AnvilIcon, FilterIcon, RefreshIcon, MagicWandIcon } from './icons';
+import type { FilterState, Tematica, Category } from '../types';
+import { Button, CollapsibleSection, NumberInput, SearchableMultiSelect, SearchableSelect, Slider, Spinner, TextArea } from './ui';
+import { AnvilIcon, FilterIcon, RefreshIcon } from './icons';
 
 interface FilterPanelProps {
   filters: FilterState;
-  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+  onFilterChange: <K extends keyof FilterState>(field: K, value: FilterState[K]) => void;
   onGenerate: () => void;
   onReset: () => void;
   isLoading: boolean;
   allowedCategories?: Category[];
 }
 
+// FIX: Explicitly typed variants with the Variants type to resolve type inference issues.
 const filterContainerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -36,6 +35,7 @@ const filterContainerVariants: Variants = {
   },
 };
 
+// FIX: Explicitly typed variants with the Variants type to resolve type inference issues.
 const filterItemVariants: Variants = {
   hidden: { y: -10, opacity: 0 },
   visible: {
@@ -48,73 +48,37 @@ const filterItemVariants: Variants = {
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   filters,
-  setFilters,
+  onFilterChange,
   onGenerate,
   onReset,
   isLoading,
   allowedCategories,
 }) => {
   const [isShaking, setIsShaking] = useState(false);
-  const surpriseMeTriggered = useRef(false);
-
-  const updateFilter = <K extends keyof FilterState>(field: K, value: FilterState[K]) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  };
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (surpriseMeTriggered.current) {
-        onGenerate();
-        surpriseMeTriggered.current = false;
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
     }
-  }, [filters, onGenerate]);
-
-  useEffect(() => {
-    if (surpriseMeTriggered.current) return;
     
     setIsShaking(true);
     const timer = setTimeout(() => setIsShaking(false), 400);
     return () => clearTimeout(timer);
   }, [filters.category, filters.thematics]);
 
+  // FIX: Safely get professions. If no thematics are selected, or the selected one doesn't exist, default to 'all'.
   const professionSourceKey = filters.thematics?.[0] || 'all';
   const professionSource = (PROFESSIONS_BY_TEMATICA as any)[professionSourceKey] || (PROFESSIONS_BY_TEMATICA as any)['all'];
-  const professionOptions = useMemo(() => (professionSource || []).map((p: string) => ({ value: p, label: p })), [professionSource]);
-  const eraOptions = useMemo(() => (ERAS_DATA as any)[filters.country] || [], [filters.country]);
+  const professionOptions = (professionSource || []).map((p: string) => ({ value: p, label: p }));
+  const eraOptions = (ERAS_DATA as any)[filters.country] || [];
 
   const categoryOptions = useMemo(() => {
     if (!allowedCategories) return CATEGORIES;
     const allowedSet = new Set(allowedCategories);
     return CATEGORIES.filter(cat => allowedSet.has(cat.value));
   }, [allowedCategories]);
-
-  const handleSurpriseMe = () => {
-    const getRandomItem = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
-    
-    const randomCategory = getRandomItem(categoryOptions);
-    const randomRarity = getRandomItem(RARITIES.filter(r => r !== 'Aleatória'));
-    const shuffledThematics = [...TEMATICAS_DATA].sort(() => 0.5 - Math.random());
-    const thematicsCount = Math.random() > 0.5 ? 2 : 1;
-    const randomThematics = shuffledThematics.slice(0, thematicsCount).map(t => t.value as Tematica);
-    const randomTonality = getRandomItem(TONALIDADE_OPTIONS);
-
-    surpriseMeTriggered.current = true;
-    
-    setFilters(prev => ({
-        ...prev,
-        category: randomCategory.value as Category,
-        rarity: randomRarity as Rarity,
-        thematics: randomThematics,
-        tonalidade: randomTonality.value,
-        // FIX: Added explicit type cast to resolve 'label' does not exist error.
-        promptModifier: `Surpresa aleatória: ${(randomCategory as { label: string }).label}, ${randomRarity}, ${randomThematics.join(', ')}`,
-        weaponType: undefined, metal: undefined, bladeColor: undefined, hunterClass: undefined,
-        hunterOrigin: undefined, breathingStyle: undefined, specialAbility: undefined,
-        fightingStyle: undefined, profession: undefined, kekkijutsuInspiration: undefined,
-        oniOrigin: undefined, oniClass: undefined, missionType: undefined, terrainType: undefined,
-        eventType: undefined, attackingClan: undefined, defendingClan: undefined,
-        armySize: 100, battleTerrain: undefined, battleStrategy: undefined,
-    }));
-  };
 
   const renderCategorySpecificFilters = () => {
     switch (filters.category) {
@@ -123,14 +87,13 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         return (
           <>
             <motion.div variants={filterItemVariants}>
-              {/* FIX: Explicitly typed the 'v' parameter to resolve 'unknown' type error. */}
-              <SearchableSelect label="Tipo de Arma" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...WEAPON_OPTIONS]} value={WEAPON_OPTIONS.find(o => o.value === filters.weaponType) || null} onChange={(v: SelectOption | null) => updateFilter('weaponType', v?.value as string)} placeholder='Aleatória' />
+              <SearchableSelect label="Tipo de Arma" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...WEAPON_OPTIONS]} value={filters.weaponType || 'Aleatória'} onChange={(v) => onFilterChange('weaponType', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-              <SearchableSelect label="Metal" options={METAL_OPTIONS} value={METAL_OPTIONS.find(o => o.value === filters.metal) || null} onChange={(v: SelectOption | null) => updateFilter('metal', v?.value as string)} placeholder='Aleatório' />
+              <SearchableSelect label="Metal" options={METAL_OPTIONS} value={filters.metal || 'Aleatório'} onChange={(v) => onFilterChange('metal', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-              <SearchableSelect label="Cor da Lâmina" options={BLADE_COLOR_OPTIONS} value={BLADE_COLOR_OPTIONS.find(o => o.value === filters.bladeColor) || null} onChange={(v: SelectOption | null) => updateFilter('bladeColor', v?.value as string)} placeholder='Aleatória' />
+              <SearchableSelect label="Cor da Lâmina" options={BLADE_COLOR_OPTIONS} value={filters.bladeColor || 'Aleatória'} onChange={(v) => onFilterChange('bladeColor', v)} />
             </motion.div>
           </>
         );
@@ -139,22 +102,22 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         return (
           <>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Classe de Caçador" options={HUNTER_CLASS_OPTIONS} value={HUNTER_CLASS_OPTIONS.find(o => o.value === filters.hunterClass) || null} onChange={(v: SelectOption | null) => updateFilter('hunterClass', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Classe de Caçador" options={HUNTER_CLASS_OPTIONS} value={filters.hunterClass || 'Aleatória'} onChange={(v) => onFilterChange('hunterClass', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Origem" options={HUNTER_ORIGIN_OPTIONS} value={HUNTER_ORIGIN_OPTIONS.find(o => o.value === filters.hunterOrigin) || null} onChange={(v: SelectOption | null) => updateFilter('hunterOrigin', v?.value as string)} placeholder='Aleatório' />
+                <SearchableSelect label="Origem" options={HUNTER_ORIGIN_OPTIONS} value={filters.hunterOrigin || 'Aleatório'} onChange={(v) => onFilterChange('hunterOrigin', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Respiração" options={BREATHING_STYLE_OPTIONS} value={BREATHING_STYLE_OPTIONS.find(o => o.value === filters.breathingStyle) || null} onChange={(v: SelectOption | null) => updateFilter('breathingStyle', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Respiração" options={BREATHING_STYLE_OPTIONS} value={filters.breathingStyle || 'Aleatória'} onChange={(v) => onFilterChange('breathingStyle', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Habilidade Especial" options={SPECIAL_ABILITY_OPTIONS} value={SPECIAL_ABILITY_OPTIONS.find(o => o.value === filters.specialAbility) || null} onChange={(v: SelectOption | null) => updateFilter('specialAbility', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Habilidade Especial" options={SPECIAL_ABILITY_OPTIONS} value={filters.specialAbility || 'Aleatória'} onChange={(v) => onFilterChange('specialAbility', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Estilo de Luta" options={FIGHTING_STYLE_OPTIONS} value={FIGHTING_STYLE_OPTIONS.find(o => o.value === filters.fightingStyle) || null} onChange={(v: SelectOption | null) => updateFilter('fightingStyle', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Estilo de Luta" options={FIGHTING_STYLE_OPTIONS} value={filters.fightingStyle || 'Aleatória'} onChange={(v) => onFilterChange('fightingStyle', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Profissão" options={professionOptions} value={professionOptions.find(o => o.value === filters.profession) || null} onChange={(v: SelectOption | null) => updateFilter('profession', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Profissão" options={professionOptions} value={filters.profession || 'Aleatória'} onChange={(v) => onFilterChange('profession', v)} />
             </motion.div>
           </>
         );
@@ -162,26 +125,26 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         return (
           <>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Inspiração de Kekkijutsu" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...KEKKIJUTSU_INSPIRATION_OPTIONS]} value={KEKKIJUTSU_INSPIRATION_OPTIONS.find(o => o.value === filters.kekkijutsuInspiration) || null} onChange={(v: SelectOption | null) => updateFilter('kekkijutsuInspiration', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Inspiração de Kekkijutsu" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...KEKKIJUTSU_INSPIRATION_OPTIONS]} value={filters.kekkijutsuInspiration || 'Aleatória'} onChange={(v) => onFilterChange('kekkijutsuInspiration', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Origem do Oni" options={ONI_ORIGIN_OPTIONS} value={ONI_ORIGIN_OPTIONS.find(o => o.value === filters.oniOrigin) || null} onChange={(v: SelectOption | null) => updateFilter('oniOrigin', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Origem do Oni" options={ONI_ORIGIN_OPTIONS} value={filters.oniOrigin || 'Aleatório'} onChange={(v) => onFilterChange('oniOrigin', v)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Classe do Oni" options={ONI_CLASS_OPTIONS} value={ONI_CLASS_OPTIONS.find(o => o.value === filters.oniClass) || null} onChange={(v: SelectOption | null) => updateFilter('oniClass', v?.value as string)} placeholder='Aleatória' />
+                <SearchableSelect label="Classe do Oni" options={ONI_CLASS_OPTIONS} value={filters.oniClass || 'Aleatória'} onChange={(v) => onFilterChange('oniClass', v)} />
             </motion.div>
           </>
         );
       case 'Respiração':
-        return <motion.div variants={filterItemVariants}><SearchableSelect label="Estilo Base (Opcional)" options={BREATHING_STYLE_OPTIONS} value={BREATHING_STYLE_OPTIONS.find(o => o.value === filters.breathingStyle) || null} onChange={(v: SelectOption | null) => updateFilter('breathingStyle', v?.value as string)} placeholder='Aleatória' /></motion.div>;
+        return <motion.div variants={filterItemVariants}><SearchableSelect label="Estilo Base (Opcional)" options={BREATHING_STYLE_OPTIONS} value={filters.breathingStyle || 'Aleatória'} onChange={(v) => onFilterChange('breathingStyle', v)} /></motion.div>;
       case 'Kekkijutsu':
-        return <motion.div variants={filterItemVariants}><SearchableSelect label="Inspiração de Kekkijutsu" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...KEKKIJUTSU_INSPIRATION_OPTIONS]} value={KEKKIJUTSU_INSPIRATION_OPTIONS.find(o => o.value === filters.kekkijutsuInspiration) || null} onChange={(v: SelectOption | null) => updateFilter('kekkijutsuInspiration', v?.value as string)} placeholder='Aleatória' /></motion.div>;
+        return <motion.div variants={filterItemVariants}><SearchableSelect label="Inspiração de Kekkijutsu" options={[{ value: 'Aleatória', label: 'Aleatória' }, ...KEKKIJUTSU_INSPIRATION_OPTIONS]} value={filters.kekkijutsuInspiration || 'Aleatória'} onChange={(v) => onFilterChange('kekkijutsuInspiration', v)} /></motion.div>;
       case 'Missões':
-          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Missão" options={MISSION_TYPE_OPTIONS} value={MISSION_TYPE_OPTIONS.find(o => o.value === filters.missionType) || null} onChange={(v: SelectOption | null) => updateFilter('missionType', v?.value as string)} placeholder='Aleatório' /></motion.div>;
+          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Missão" options={MISSION_TYPE_OPTIONS} value={filters.missionType || 'Aleatório'} onChange={(v) => onFilterChange('missionType', v)} /></motion.div>;
       case 'Local/Cenário':
-          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Terreno" options={TERRAIN_TYPE_OPTIONS} value={TERRAIN_TYPE_OPTIONS.find(o => o.value === filters.terrainType) || null} onChange={(v: SelectOption | null) => updateFilter('terrainType', v?.value as string)} placeholder='Aleatório' /></motion.div>;
+          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Terreno" options={TERRAIN_TYPE_OPTIONS} value={filters.terrainType || 'Aleatório'} onChange={(v) => onFilterChange('terrainType', v)} /></motion.div>;
       case 'Evento':
-          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Evento" options={EVENT_TYPE_OPTIONS} value={EVENT_TYPE_OPTIONS.find(o => o.value === filters.eventType) || null} onChange={(v: SelectOption | null) => updateFilter('eventType', v?.value as string)} placeholder='Aleatório' /></motion.div>;
+          return <motion.div variants={filterItemVariants}><SearchableSelect label="Tipo de Evento" options={EVENT_TYPE_OPTIONS} value={filters.eventType || 'Aleatório'} onChange={(v) => onFilterChange('eventType', v)} /></motion.div>;
       default:
         return null;
     }
@@ -196,72 +159,59 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <SearchableSelect 
               label="Clã Atacante" 
               options={CLAN_OPTIONS} 
-              value={CLAN_OPTIONS.find(o => o.value === filters.attackingClan) || null}
-              onChange={(v: SelectOption | null) => updateFilter('attackingClan', v?.value as string)} 
-              placeholder='Esquadrão de Caçadores de Demônios'
+              value={filters.attackingClan || 'Esquadrão de Caçadores de Demônios'} 
+              onChange={(v) => onFilterChange('attackingClan', v)} 
             />
             <SearchableSelect 
               label="Clã Defensor" 
               options={CLAN_OPTIONS} 
-              value={CLAN_OPTIONS.find(o => o.value === filters.defendingClan) || null}
-              onChange={(v: SelectOption | null) => updateFilter('defendingClan', v?.value as string)}
-              placeholder='Os Doze Kizuki (Luas Demoníacas)'
+              value={filters.defendingClan || 'Os Doze Kizuki (Luas Demoníacas)'} 
+              onChange={(v) => onFilterChange('defendingClan', v)} 
             />
             <Slider 
               label="Tamanho do Exército (por clã)" 
               value={filters.armySize || 100} 
-              onChange={(e) => updateFilter('armySize', parseInt(e.target.value, 10))} 
+              onChange={(e) => onFilterChange('armySize', parseInt(e.target.value, 10))} 
               min={10} max={1000} step={10} 
             />
             <SearchableSelect 
               label="Terreno da Batalha" 
               options={TERRAIN_TYPE_OPTIONS} 
-              value={TERRAIN_TYPE_OPTIONS.find(o => o.value === filters.battleTerrain) || null} 
-              onChange={(v: SelectOption | null) => updateFilter('battleTerrain', v?.value as string)} 
-              placeholder='Floresta Densa'
+              value={filters.battleTerrain || 'Floresta Densa'} 
+              onChange={(v) => onFilterChange('battleTerrain', v)} 
             />
             <SearchableSelect 
               label="Estratégia (Atacante)" 
               options={STRATEGY_OPTIONS} 
-              value={STRATEGY_OPTIONS.find(o => o.value === filters.battleStrategy) || null} 
-              onChange={(v: SelectOption | null) => updateFilter('battleStrategy', v?.value as string)} 
-              placeholder='Ataque Frontal'
+              value={filters.battleStrategy || 'Ataque Frontal'} 
+              onChange={(v) => onFilterChange('battleStrategy', v)} 
             />
         </div>
     </CollapsibleSection>
   ) : null;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 flex items-center gap-3 border-b border-border-color flex-shrink-0">
+    <div className="filter-panel">
+      <div className="filter-panel-header">
         <FilterIcon className="w-6 h-6" />
         <h2 className="text-xl font-bold font-gangofthree">Configurar Forja</h2>
-        <div className="ml-auto flex items-center gap-1">
-            <Tooltip content="Gerar uma ideia aleatória">
-                <Button variant="ghost" size="sm" onClick={handleSurpriseMe} className="!p-2" disabled={isLoading}>
-                    <MagicWandIcon className="w-5 h-5"/>
-                </Button>
-            </Tooltip>
-            <Tooltip content="Limpar Filtros">
-                <Button variant="ghost" size="sm" onClick={onReset} className="!p-2" disabled={isLoading}>
-                    <RefreshIcon className="w-5 h-5"/>
-                </Button>
-            </Tooltip>
-        </div>
+        <Button variant="ghost" size="sm" onClick={onReset} className="ml-auto !p-2">
+            <RefreshIcon className="w-5 h-5"/>
+        </Button>
       </div>
 
-      <div className="flex-grow p-4 space-y-4 overflow-y-auto">
-        <CollapsibleSection title="Filtros Principais" defaultOpen>
+      <div className="filter-panel-body">
+        <CollapsibleSection title="Filtros Principais" defaultOpen forceOpen>
           <motion.div className="space-y-4" variants={filterContainerVariants} initial="hidden" animate="visible">
             <motion.div variants={filterItemVariants}>
-              <SearchableSelect label="Categoria" options={categoryOptions} value={categoryOptions.find(c => c.value === filters.category) || null} onChange={(v: SelectOption | null) => v && updateFilter('category', v.value as Category)} />
+              <SearchableSelect label="Categoria" options={categoryOptions} value={filters.category} onChange={(v) => onFilterChange('category', v as any)} />
             </motion.div>
             <motion.div variants={filterItemVariants}>
-              <SearchableSelect label="Raridade" options={RARITIES.map(r => ({ value: r, label: r }))} value={{ value: filters.rarity, label: filters.rarity }} onChange={(v: SelectOption | null) => v && updateFilter('rarity', v.value as Rarity | 'Aleatória')} />
+              <SearchableSelect label="Raridade" options={RARITIES.map(r => ({ value: r, label: r }))} value={filters.rarity} onChange={(v) => onFilterChange('rarity', v as any)} />
             </motion.div>
             {showLevelSlider && (
               <motion.div variants={filterItemVariants}>
-                <Slider label="Nível Sugerido" value={filters.level} onChange={(e) => updateFilter('level', parseInt(e.target.value, 10))} min={1} max={20} step={1} />
+                <Slider label="Nível Sugerido" value={filters.level} onChange={(e) => onFilterChange('level', parseInt(e.target.value, 10))} min={1} max={20} step={1} />
               </motion.div>
             )}
           </motion.div>
@@ -285,18 +235,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         <CollapsibleSection title="Filtros de Tema" defaultOpen>
             <motion.div className="space-y-4" variants={filterContainerVariants} initial="hidden" animate="visible">
               <motion.div variants={filterItemVariants}>
-                <SearchableMultiSelect label="Temática" options={TEMATICAS_DATA} value={filters.thematics.map(t => ({value: t, label: t}))} onChange={(v: SelectOption[]) => updateFilter('thematics', v.map(i => i.value as Tematica))} placeholder="Selecione temáticas..." />
+                <SearchableMultiSelect label="Temática" options={TEMATICAS_DATA} selected={filters.thematics} onChange={(v) => onFilterChange('thematics', v as Tematica[])} placeholder="Selecione temáticas..." />
               </motion.div>
               <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Inspiração Cultural (País)" options={PAISES_DATA} value={PAISES_DATA.find(p => p.value === filters.country)} onChange={(v: SelectOption | null) => v && updateFilter('country', v.value as string)} />
+                <SearchableSelect label="Inspiração Cultural (País)" options={PAISES_DATA} value={filters.country} onChange={(v) => onFilterChange('country', v)} />
               </motion.div>
               {eraOptions.length > 0 && (
                  <motion.div variants={filterItemVariants}>
-                  <SearchableSelect label="Era Histórica" options={eraOptions} value={eraOptions.find(e => e.value === filters.era) || null} onChange={(v: SelectOption | null) => v && updateFilter('era', v.value as string)} placeholder='Aleatório' />
+                  <SearchableSelect label="Era Histórica" options={eraOptions} value={filters.era || 'Aleatório'} onChange={(v) => onFilterChange('era', v)} />
                  </motion.div>
               )}
               <motion.div variants={filterItemVariants}>
-                <SearchableSelect label="Tonalidade" options={TONALIDADE_OPTIONS} value={TONALIDADE_OPTIONS.find(t => t.value === filters.tonalidade)} onChange={(v: SelectOption | null) => v && updateFilter('tonalidade', v.value as string)} />
+                <SearchableSelect label="Tonalidade" options={TONALIDADE_OPTIONS} value={filters.tonalidade} onChange={(v) => onFilterChange('tonalidade', v)} />
               </motion.div>
             </motion.div>
         </CollapsibleSection>
@@ -307,7 +257,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               className="prompt-modifier"
               placeholder="Ex: 'um item que era de um pilar', 'um oni que usa gelo', etc."
               value={filters.promptModifier}
-              onChange={(e) => updateFilter('promptModifier', e.target.value)}
+              onChange={(e) => onFilterChange('promptModifier', e.target.value)}
               rows={4}
               maxLength={1000}
             />
@@ -315,9 +265,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         </CollapsibleSection>
       </div>
       
-      <div className="p-4 border-t border-border-color bg-bg-secondary flex-shrink-0 flex items-center gap-4">
-          <NumberInput label="Qtde." value={filters.quantity} onChange={(v) => updateFilter('quantity', v)} min={1} max={5} />
-          <Button onClick={onGenerate} disabled={isLoading} className={`w-full ${isShaking ? 'animate-shake' : ''}`} size="lg">
+      <div className="filter-panel-footer">
+          <NumberInput label="Quantidade a Gerar" value={filters.quantity} onChange={(v) => onFilterChange('quantity', v)} min={1} max={5} />
+          <Button onClick={onGenerate} disabled={isLoading} className={`forge-button w-full ${isShaking ? 'animate-shake' : ''}`} size="lg">
             {isLoading ? (
                 <>
                     <Spinner size="sm" />
@@ -326,7 +276,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             ) : (
                 <>
                     <AnvilIcon className="w-6 h-6" />
-                    Forjar
+                    Forjar Lenda
                 </>
             )}
           </Button>

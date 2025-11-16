@@ -1,36 +1,29 @@
+// FIX: Implemented the TextInput component to replace placeholder content, resolving multiple module and syntax errors across the application.
 import React from 'react';
+import { InfoTooltip } from './InfoTooltip';
 
-export interface TextInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
+interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  tooltip?: string;
+  className?: string;
 }
 
-const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
-  ({ className, type = 'text', label, error, ...props }, ref) => {
-    return (
-      <div className="w-full">
-        {label && <label htmlFor={props.id} className="block text-sm font-medium text-text-secondary mb-1">{label}</label>}
-        <input
-          type={type}
-          className={`
-            w-full px-3 py-2 bg-bg-secondary border rounded-md
-            text-text-primary placeholder:text-text-muted
-            transition-colors duration-200
-            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-primary
-            ${error 
-                ? 'border-red-500 focus:ring-red-500' 
-                : 'border-border-color focus:ring-accent-end'}
-            ${className}
-          `}
-          ref={ref}
-          {...props}
-        />
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-      </div>
-    );
-  }
-);
-TextInput.displayName = 'TextInput';
+export const TextInput: React.FC<TextInputProps> = ({ label, tooltip, className = '', ...props }) => {
+  const baseClasses = "w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-start)] focus:border-[var(--accent-start)] disabled:opacity-50";
 
-export { TextInput };
+  return (
+    <div>
+      {label && (
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-sm font-medium text-gray-400">{label}</span>
+          {tooltip && <InfoTooltip text={tooltip} />}
+        </div>
+      )}
+      <input
+        type="text"
+        className={`${baseClasses} ${className}`}
+        {...props}
+      />
+    </div>
+  );
+};

@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
 import { Select } from '../../components/ui/Select';
 import { Switch } from '../../components/ui/Switch';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { TECHNIQUE_TYPES, BASE_ELEMENTS, TECHNIQUE_COMPLEXITY } from '../../constants';
 import type { TechniqueFiltersState } from '../TechniquesInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: TechniqueFiltersState;
@@ -45,20 +46,20 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Tipo de Técnica"
                            options={TECHNIQUE_TYPES}
-                           value={filters.type}
-                           onChange={(val) => updateFilter('type', val)}
+                           value={filters.type?.value as string}
+                           onChange={(val) => updateFilter('type', TECHNIQUE_TYPES.find(o => o.value === val) || null)}
                         />
                         <Select
                             label="Elemento Base"
                             options={BASE_ELEMENTS}
-                            value={filters.baseElement}
-                            onChange={(val) => updateFilter('baseElement', val)}
+                            value={filters.baseElement?.value as string}
+                            onChange={(val) => updateFilter('baseElement', BASE_ELEMENTS.find(o => o.value === val) || null)}
                         />
                         <Select
                             label="Complexidade / Formas"
                             options={TECHNIQUE_COMPLEXITY}
-                            value={filters.complexity}
-                            onChange={(val) => updateFilter('complexity', val)}
+                            value={filters.complexity?.value as string}
+                            onChange={(val) => updateFilter('complexity', TECHNIQUE_COMPLEXITY.find(o => o.value === val) || null)}
                         />
                     </div>
                 </CollapsibleSection>
@@ -68,7 +69,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <Switch 
                             label="Gerar Usuário Notável"
                             checked={filters.generateNotableUser}
-                            onChange={(val) => updateFilter('generateNotableUser', val)}
+                            // FIX: pass boolean value from event
+                            onChange={(e) => updateFilter('generateNotableUser', e.target.checked)}
                        />
                     </div>
                 </CollapsibleSection>
@@ -79,6 +81,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Criando...' : 'Gerar Técnica'}

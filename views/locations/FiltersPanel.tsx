@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
 import { Select } from '../../components/ui/Select';
 import { Switch } from '../../components/ui/Switch';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { LOCATION_BIOMES, LOCATION_ATMOSPHERES } from '../../constants';
 import type { LocationFiltersState } from '../LocationsInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: LocationFiltersState;
@@ -45,8 +46,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Bioma / Ambiente"
                            options={LOCATION_BIOMES}
-                           value={filters.biome}
-                           onChange={(val) => updateFilter('biome', val)}
+                           value={filters.biome?.value as string}
+                           onChange={(val) => updateFilter('biome', LOCATION_BIOMES.find(o => o.value === val) || null)}
                         />
                     </div>
                 </CollapsibleSection>
@@ -56,13 +57,14 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <Select
                             label="Atmosfera Predominante"
                             options={LOCATION_ATMOSPHERES}
-                            value={filters.atmosphere}
-                            onChange={(val) => updateFilter('atmosphere', val)}
+                            value={filters.atmosphere?.value as string}
+                            onChange={(val) => updateFilter('atmosphere', LOCATION_ATMOSPHERES.find(o => o.value === val) || null)}
                         />
                        <Switch 
                             label="Gerar Pontos de Interesse"
                             checked={filters.generatePointsOfInterest}
-                            onChange={(val) => updateFilter('generatePointsOfInterest', val)}
+                            // FIX: pass boolean value from event
+                            onChange={(e) => updateFilter('generatePointsOfInterest', e.target.checked)}
                        />
                     </div>
                 </CollapsibleSection>
@@ -73,6 +75,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Criando...' : 'Gerar Local'}

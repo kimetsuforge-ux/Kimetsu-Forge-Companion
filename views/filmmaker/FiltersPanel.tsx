@@ -1,11 +1,12 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
 import { Select } from '../../components/ui/Select';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS } from '../../constants';
 import type { FilmmakerFiltersState } from '../FilmmakerInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: FilmmakerFiltersState;
@@ -44,14 +45,14 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Proporção"
                            options={VIDEO_ASPECT_RATIOS}
-                           value={filters.aspectRatio}
-                           onChange={(val) => updateFilter('aspectRatio', val)}
+                           value={filters.aspectRatio?.value as string}
+                           onChange={(val) => updateFilter('aspectRatio', VIDEO_ASPECT_RATIOS.find(o => o.value === val) || null)}
                         />
                         <Select
                             label="Resolução"
                             options={VIDEO_RESOLUTIONS}
-                            value={filters.resolution}
-                            onChange={(val) => updateFilter('resolution', val)}
+                            value={filters.resolution?.value as string}
+                            onChange={(val) => updateFilter('resolution', VIDEO_RESOLUTIONS.find(o => o.value === val) || null)}
                         />
                     </div>
                 </CollapsibleSection>
@@ -62,6 +63,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Renderizando...' : 'Gerar Vídeo'}

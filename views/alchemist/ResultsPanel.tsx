@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+// FIX: Import AlchemistItem (now defined in types.ts)
 import type { AlchemistItem } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';

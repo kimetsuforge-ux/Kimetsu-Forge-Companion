@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
 import { Select } from '../../components/ui/Select';
 import { Slider } from '../../components/ui/Slider';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added AI_MODELS to constants export
 import { AI_MODELS } from '../../constants';
 import type { AlchemistState } from '../AlchemistInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: AlchemistState;
@@ -53,8 +54,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Modelo de IA"
                            options={AI_MODELS}
-                           value={filters.model}
-                           onChange={(val) => updateFilter('model', val)}
+                           value={filters.model?.value as string}
+                           onChange={(val) => updateFilter('model', AI_MODELS.find(o => o.value === val) || null)}
                         />
                          <Slider 
                             label="Temperatura (Criatividade)"
@@ -89,6 +90,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Transmutando...' : 'Gerar Resposta'}

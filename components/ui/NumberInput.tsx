@@ -1,41 +1,53 @@
 import React from 'react';
-import { TextInput, type TextInputProps } from './TextInput';
 
-interface NumberInputProps extends Omit<TextInputProps, 'onChange' | 'value' | 'type'> {
+interface NumberInputProps {
+  label: string;
   value: number;
-  onChange: (value: number) => void;
+  onChange: (newValue: number) => void;
   min?: number;
   max?: number;
+  step?: number;
 }
 
-export const NumberInput: React.FC<NumberInputProps> = ({ value, onChange, min, max, ...props }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let numValue = parseInt(e.target.value, 10);
-    if (isNaN(numValue)) {
-      numValue = min !== undefined ? min : 0;
-    }
-    if (min !== undefined && numValue < min) {
-      numValue = min;
-    }
-    if (max !== undefined && numValue > max) {
-      numValue = max;
-    }
-    onChange(numValue);
+export const NumberInput: React.FC<NumberInputProps> = ({ label, value, onChange, min = 1, max = 10, step = 1 }) => {
+  const handleIncrement = () => {
+    const newValue = Math.min(max, value + step);
+    onChange(newValue);
+  };
+
+  const handleDecrement = () => {
+    const newValue = Math.max(min, value - step);
+    onChange(newValue);
   };
 
   return (
-    <div className='flex items-center gap-2'>
-        {props.label && <label className="block text-sm font-medium text-text-secondary whitespace-nowrap">{props.label}</label>}
-        <TextInput
-          {...props}
-          label=''
-          type="number"
+    <div>
+      <span className="text-sm font-medium text-gray-400 mb-1 block">{label}</span>
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={handleDecrement} 
+          disabled={value <= min}
+          className="number-input-button"
+          aria-label="Decrement"
+        >
+          -
+        </button>
+        <input 
+          type="text"
+          readOnly 
           value={value}
-          onChange={handleChange}
-          min={min}
-          max={max}
-          className="w-20 text-center"
+          className="w-full text-center bg-gray-900/50 border border-gray-700 rounded-md py-2 px-1 text-white focus:outline-none"
+          aria-label="Current quantity"
         />
+        <button 
+          onClick={handleIncrement} 
+          disabled={value >= max}
+          className="number-input-button"
+          aria-label="Increment"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 };

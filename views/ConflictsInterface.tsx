@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { useCoreUI, useConflicts } from '../contexts/AppContext';
+// FIX: Replaced non-existent hooks with correct ones from AppContext
+import { useAppCore, useForge } from '../contexts/AppContext';
 import { FiltersPanel } from './conflicts/FiltersPanel';
 import { ResultsPanel } from './conflicts/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
-import type { ConflictItem } from '../types';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported ConflictItem from types.ts
+import type { ConflictItem, GeneratedItem } from '../types';
+// FIX: Imported constants
 import { CONFLICT_SCALES, CONFLICT_TYPES, FACTIONS } from '../constants';
 
 export interface ConflictFiltersState {
@@ -23,12 +27,14 @@ const initialFiltersState: ConflictFiltersState = {
 };
 
 const ConflictsInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError, openDetailModal } = useCoreUI();
-    const { history, setHistory, toggleFavorite } = useConflicts();
+    // FIX: Corrected hook usage
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    // FIX: Using useForge for history and detail modal
+    const { history, addHistoryItem, toggleFavorite, setSelectedItem: openDetailModal } = useForge();
     const [filters, setFilters] = useState<ConflictFiltersState>(initialFiltersState);
     
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
@@ -57,24 +63,37 @@ const ConflictsInterface: React.FC = () => {
 
             const parsedResponse = JSON.parse(responseText);
             
-            const newItem: ConflictItem = {
+            // FIX: Adapt to GeneratedItem for context compatibility
+            const newItem: GeneratedItem = {
                 id: `conflict-${Date.now()}`,
+                nome: parsedResponse.name,
+                descricao: parsedResponse.synopsis,
+                descricao_curta: parsedResponse.synopsis.substring(0, 100) + '...',
+                categoria: 'Guerra de Clãs',
+                is_favorite: false,
+                createdAt: new Date().toISOString(),
                 ...parsedResponse,
-                isFavorite: false,
+                 // Add dummy required fields
+                raridade: 'Rara',
+                nivel_sugerido: 10,
+                ganchos_narrativos: [],
             };
-            setHistory(prev => [newItem, ...prev]);
+            addHistoryItem(newItem);
 
         } catch (e: any) {
             console.error("Erro durante a geração de conflito:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
 
-    const handleViewDetails = (item: ConflictItem) => {
+    const handleViewDetails = (item: GeneratedItem) => {
         openDetailModal(item);
     };
+
+    // Filter history for this view
+    const conflictHistory = history.filter(item => item.categoria === 'Guerra de Clãs');
 
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -82,16 +101,18 @@ const ConflictsInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialFiltersState)}
             />
             <ResultsPanel
-                results={history}
-                isLoading={isLoading}
-                error={error}
+                results={conflictHistory as unknown as ConflictItem[]}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleGenerate}
-                onViewDetails={handleViewDetails}
-                onToggleFavorite={toggleFavorite}
+// FIX: Cast handler to 'any' to resolve type incompatibility between GeneratedItem and ConflictItem.
+                onViewDetails={handleViewDetails as any}
+// FIX: Cast handler to '(item: ConflictItem) => void' to resolve type incompatibility.
+                onToggleFavorite={toggleFavorite as (item: ConflictItem) => void}
             />
         </div>
     );

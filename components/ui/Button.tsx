@@ -1,58 +1,51 @@
+// FIX: Added Spinner import
 import React from 'react';
+import { Spinner } from './Spinner';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
-
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  // FIX: Added 'icon' size
+  size?: 'sm' | 'md' | 'lg' | 'icon';
+  children: React.ReactNode;
+  // FIX: Added isLoading prop
   isLoading?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className = '', variant = 'primary', size = 'md', isLoading = false, children, ...props }, ref) => {
-    
-    const baseClasses = 'inline-flex items-center justify-center rounded-md font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-end focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed';
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  children,
+  className = '',
+  // FIX: Destructure isLoading prop
+  isLoading,
+  ...props
+}) => {
+  const baseClasses = 'btn inline-flex items-center justify-center font-semibold rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
 
-    const sizeClasses = {
-      sm: 'px-3 py-1.5 text-xs',
-      md: 'px-4 py-2 text-sm',
-      lg: 'px-6 py-3 text-base',
-      icon: 'h-9 w-9',
-    };
+  const variantClasses = {
+    primary: 'btn-forge',
+    secondary: 'btn-secondary',
+    ghost: 'bg-transparent text-text-secondary hover:bg-white/10 focus:ring-[var(--accent-forge-start)]',
+    danger: 'bg-red-700 text-white hover:bg-red-800 focus:ring-red-600',
+  };
 
-    const variantClasses = {
-      primary: 'text-white bg-accent-gradient hover:opacity-90 shadow-sm',
-      secondary: 'bg-bg-secondary text-text-primary border border-border-color hover:bg-bg-card',
-      ghost: 'bg-transparent text-text-primary hover:bg-bg-secondary',
-      danger: 'bg-red-600/90 text-white hover:bg-red-700',
-    };
+  const sizeClasses = {
+    sm: 'px-3 py-1.5 text-xs gap-1',
+    md: 'px-4 py-2 text-sm gap-2',
+    lg: 'px-6 py-3 text-base gap-2',
+    // FIX: Added styles for icon size
+    icon: 'p-2'
+  };
 
-    const combinedClasses = [
-        baseClasses,
-        sizeClasses[size],
-        variantClasses[variant],
-        className
-    ].join(' ');
-
-    return (
-      <button
-        ref={ref}
-        className={combinedClasses}
-        disabled={isLoading || props.disabled}
-        {...props}
-      >
-        {isLoading && (
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-        )}
-        {children}
-      </button>
-    );
-  }
-);
-
-Button.displayName = 'Button';
-export { Button };
+  return (
+    <button
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      // FIX: Disable button when loading
+      disabled={props.disabled || isLoading}
+      {...props}
+    >
+      {/* FIX: Show spinner when loading */}
+      {isLoading ? <Spinner size="sm" /> : children}
+    </button>
+  );
+};

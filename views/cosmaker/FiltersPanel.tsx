@@ -1,11 +1,13 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
-import { SearchableMultiSelect, Select } from '../../components/ui/Select';
+// FIX: Import from ui barrel file
+import { SearchableMultiSelect, Select } from '../../components/ui';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { COSMAKER_CHARACTER_TYPES, COSMAKER_ART_STYLES, COSMAKER_COLORS, COSMAKER_MATERIALS } from '../../constants';
 import type { CosmakerFiltersState } from '../CosmakerInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: CosmakerFiltersState;
@@ -44,14 +46,14 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Tipo de Personagem"
                            options={COSMAKER_CHARACTER_TYPES}
-                           value={filters.characterType}
-                           onChange={(val) => updateFilter('characterType', val)}
+                           value={filters.characterType?.value as string}
+                           onChange={(val) => updateFilter('characterType', COSMAKER_CHARACTER_TYPES.find(o => o.value === val) || null)}
                         />
                         <Select
                             label="Estilo de Arte"
                             options={COSMAKER_ART_STYLES}
-                            value={filters.artStyle}
-                            onChange={(val) => updateFilter('artStyle', val)}
+                            value={filters.artStyle?.value as string}
+                            onChange={(val) => updateFilter('artStyle', COSMAKER_ART_STYLES.find(o => o.value === val) || null)}
                         />
                     </div>
                 </CollapsibleSection>
@@ -61,15 +63,15 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <SearchableMultiSelect 
                             label="Paleta de Cores"
                             options={COSMAKER_COLORS}
-                            value={filters.colors}
-                            onChange={(val) => updateFilter('colors', val)}
+                            selected={filters.colors.map(c => c.value as string)}
+                            onChange={(vals) => updateFilter('colors', vals.map(v => COSMAKER_COLORS.find(o => o.value === v)).filter(Boolean) as SelectOption[])}
                             placeholder="Selecione as cores..."
                        />
                        <SearchableMultiSelect 
                             label="Materiais do Traje"
                             options={COSMAKER_MATERIALS}
-                            value={filters.materials}
-                            onChange={(val) => updateFilter('materials', val)}
+                            selected={filters.materials.map(m => m.value as string)}
+                            onChange={(vals) => updateFilter('materials', vals.map(v => COSMAKER_MATERIALS.find(o => o.value === v)).filter(Boolean) as SelectOption[])}
                             placeholder="Selecione os materiais..."
                        />
                     </div>
@@ -81,6 +83,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Criando Arte...' : 'Gerar Imagem'}

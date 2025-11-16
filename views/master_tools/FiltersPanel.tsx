@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
 import { Select } from '../../components/ui/Select';
 import { Slider } from '../../components/ui/Slider';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { MASTER_TOOL_TYPES, NAME_CATEGORIES, PLOT_HOOK_GENRES, ONOMATOPOEIA_TYPES } from '../../constants';
 import type { MasterToolFiltersState } from '../MasterToolsInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: MasterToolFiltersState;
@@ -29,8 +30,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     <Select 
                         label="Categoria do Nome"
                         options={NAME_CATEGORIES}
-                        value={filters.category}
-                        onChange={(val) => updateFilter('category', val)}
+                        value={filters.category?.value as string}
+                        onChange={(val) => updateFilter('category', NAME_CATEGORIES.find(o => o.value === val) || null)}
                     />
                 );
             case 'plot_hook_generator':
@@ -38,8 +39,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     <Select
                         label="Gênero da Trama"
                         options={PLOT_HOOK_GENRES}
-                        value={filters.genre}
-                        onChange={(val) => updateFilter('genre', val)}
+                        value={filters.genre?.value as string}
+                        onChange={(val) => updateFilter('genre', PLOT_HOOK_GENRES.find(o => o.value === val) || null)}
                     />
                 );
             case 'onomatopoeia_generator':
@@ -47,8 +48,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                      <Select
                         label="Tipo de Som"
                         options={ONOMATOPOEIA_TYPES}
-                        value={filters.soundType}
-                        onChange={(val) => updateFilter('soundType', val)}
+                        value={filters.soundType?.value as string}
+                        onChange={(val) => updateFilter('soundType', ONOMATOPOEIA_TYPES.find(o => o.value === val) || null)}
                     />
                 );
             default:
@@ -69,8 +70,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                  <Select 
                     label="Ferramenta"
                     options={MASTER_TOOL_TYPES}
-                    value={filters.toolType}
-                    onChange={(val) => updateFilter('toolType', val)}
+                    value={filters.toolType?.value as string}
+                    onChange={(val) => updateFilter('toolType', MASTER_TOOL_TYPES.find(o => o.value === val) || null)}
                 />
                 
                 <TextArea
@@ -101,6 +102,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Gerando...' : 'Usar Ferramenta'}

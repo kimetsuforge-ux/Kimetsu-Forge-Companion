@@ -1,13 +1,15 @@
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
-import { SearchableMultiSelect, Select } from '../../components/ui/Select';
+// FIX: Import from ui barrel file
+import { SearchableMultiSelect, Select } from '../../components/ui';
 import { Slider } from '../../components/ui/Slider';
 import { Switch } from '../../components/ui/Switch';
 import { TextArea } from '../../components/ui/TextArea';
 import { TextInput } from '../../components/ui/TextInput';
+// FIX: Added missing constants
 import { CREATIVE_STYLES, DETAIL_LEVELS, FORGE_CATEGORIES } from '../../constants';
-import type { FilterState as ForgeState, Category } from '../../types';
+import type { FilterState as ForgeState, Category, SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: ForgeState;
@@ -47,13 +49,14 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                         <Select 
                            label="Categoria"
                            options={FORGE_CATEGORIES}
-                           value={FORGE_CATEGORIES.find(c => c.value === filters.category) || null}
-                           onChange={(val) => val && updateFilter('category', val.value as Category)}
+                           // FIX: Select expects string value, not object
+                           value={filters.category}
+                           onChange={(val) => val && updateFilter('category', val as Category)}
                         />
                         <Select
                             label="Nível de Detalhe"
                             options={DETAIL_LEVELS}
-                            value={null}
+                            value={(DETAIL_LEVELS[1] as SelectOption).value as string}
                             onChange={(val) => {}}
                         />
                          <Slider 
@@ -78,14 +81,14 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <SearchableMultiSelect 
                             label="Estilos"
                             options={CREATIVE_STYLES}
-                            value={[]}
+                            selected={[]}
                             onChange={(val) => {}}
                             placeholder="Selecione estilos..."
                        />
                        <Switch 
                             label="Incluir Elementos Canônicos"
                             checked={false}
-                            onChange={(val) => {}}
+                            onChange={(e) => {}}
                        />
                     </div>
                 </CollapsibleSection>
@@ -96,6 +99,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onForge}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Forjando...' : 'Forjar Ideia'}

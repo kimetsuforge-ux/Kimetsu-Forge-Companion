@@ -1,9 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useCoreUI, useFilmmaker } from '../contexts/AppContext';
+// FIX: Replaced non-existent hooks with correct ones from AppContext
+import { useAppCore, useFilmmaker } from '../contexts/AppContext';
 import { FiltersPanel } from './filmmaker/FiltersPanel';
 import { ResultsPanel } from './filmmaker/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported FilmmakerItem from types.ts
 import type { FilmmakerItem } from '../types';
+// FIX: Added missing constants
 import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS } from '../constants';
 
 export interface FilmmakerFiltersState {
@@ -19,15 +23,16 @@ const initialFiltersState: FilmmakerFiltersState = {
 };
 
 const FilmmakerInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError } = useCoreUI();
+    // FIX: Corrected hook usage
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
     const { history, setHistory, toggleFavorite } = useFilmmaker();
     const [filters, setFilters] = useState<FilmmakerFiltersState>(initialFiltersState);
     const [loadingMessage, setLoadingMessage] = useState('');
 
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        // FIX: Set a valid content type for loadingState
+        setLoadingState({ active: true, content: 'video_generation' });
         setError(null);
-        setLoadingMessage('Escrevendo a cena...');
 
         try {
             if (!filters.prompt || !filters.aspectRatio || !filters.resolution) {
@@ -69,12 +74,12 @@ const FilmmakerInterface: React.FC = () => {
 
         } catch (e: any) {
             console.error("Erro durante a geração de cena:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao gerar a descrição da cena.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao gerar a descrição da cena.' });
         } finally {
-            setLoading(false);
-            setLoadingMessage('');
+             // FIX: Set a valid content type for loadingState
+            setLoadingState({ active: false, content: 'generic' });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, setHistory, setLoadingState, setError]);
     
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -82,14 +87,14 @@ const FilmmakerInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialFiltersState)}
             />
             <ResultsPanel
                 results={history}
-                isLoading={isLoading}
-                loadingMessage={loadingMessage}
-                error={error}
+                isLoading={loadingState.active}
+                loadingMessage={loadingState.content === 'video_generation' ? 'Escrevendo a cena...' : ''}
+                error={error?.message || null}
                 onRetry={handleGenerate}
                 onToggleFavorite={toggleFavorite}
             />

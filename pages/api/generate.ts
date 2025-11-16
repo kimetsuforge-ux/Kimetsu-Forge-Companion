@@ -3,6 +3,7 @@ import { NextApiResponse } from 'next';
 import { withIronSessionApiRoute } from 'iron-session/next';
 import { GoogleGenAI, Type, Modality, GenerateContentResponse } from '@google/genai';
 import { sessionOptions } from '../../lib/session';
+// FIX: Import CONFLICT_SCALES
 import { CONFLICT_SCALES } from '../../constants';
 
 /**

@@ -1,112 +1,202 @@
-
-
 import React from 'react';
-import { AppProvider, useCoreUI } from './contexts/AppContext';
-import type { ViewItem } from './types';
-import { VIEWS } from './constants';
-import { ViewRenderer } from './views/ViewRenderer';
-import { AboutModal } from './components/modals/AboutModal';
-import { ApiKeysModal } from './components/modals/ApiKeysModal';
-import { DetailModal } from './components/modals/DetailModal';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  CoreUIProvider,
+  AuthProvider,
+  ForgeProvider,
+  ApiKeysProvider,
+  useAppCore,
+  UsageProvider,
+  AlchemyProvider,
+  useForge,
+  // FIX: Import new providers
+  ConflictsProvider,
+  CharactersProvider,
+  TechniquesProvider,
+  LocationsProvider,
+  MasterToolsProvider,
+  CosmakerProvider,
+  FilmmakerProvider,
+} from './contexts/AppContext';
+import { ToastProvider } from './components/ToastProvider';
+import { Header } from './components/Header';
+import { ForgeInterface } from './views/ForgeInterface';
+import { ClanWarsInterface } from './views/ClanWarsInterface';
+// FIX: Changed to default import
+import MasterToolsInterface from './views/MasterToolsInterface';
+import { AboutModal } from './components/AboutModal';
+import { HowItWorksModal } from './components/HowItWorksModal';
+import { ApiKeysModal } from './components/ApiKeysModal';
+import { ErrorDisplay } from './components/ui/ErrorDisplay';
 import { AnimatedThemedBackground } from './components/AnimatedThemedBackground';
-import { Button } from './components/ui/Button';
-import { Tooltip } from './components/ui/Tooltip';
+import { OnboardingTour } from './components/OnboardingTour';
+import ErrorBoundary from './components/ErrorBoundary';
+import { TABS_DATA } from './lib/tabsData';
+import { LibraryTome } from './components/LibraryTome';
+import { DetailModal } from './components/DetailModal';
+import { PromptEngineeringPanel } from './views/PromptEngineeringPanel';
+// FIX: Changed to default import
+import CosmakerInterface from './views/CosmakerInterface';
+// FIX: Changed to default import
+import FilmmakerInterface from './views/FilmmakerInterface';
 
 
-// FIX: Removed React.FC for modern best practices, which can resolve subtle type inference issues.
-const App = () => {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
-};
-
-const InfoIcon = ({ className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-5 h-5 ${className}`}>
-        <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
-    </svg>
-);
-
-const KeyIcon = ({ className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-5 h-5 ${className}`}>
-        <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-    </svg>
-);
-
-
-// FIX: Removed React.FC for modern best practices.
 const AppContent = () => {
-  const { activeView, setActiveView, themeClass, openAboutModal, openApiKeysModal } = useCoreUI();
+  const {
+    activeView,
+    isAboutModalOpen, closeAboutModal, openAboutModal,
+    isHowItWorksModalOpen, closeHowItWorksModal, openHowItWorksModal,
+    isApiKeysModalOpen, closeApiKeysModal,
+    isLibraryTomeOpen, closeLibraryTome, libraryTomeInitialState,
+    appError, setAppError,
+  } = useAppCore();
+  
+  const { 
+    selectedItem, 
+    setSelectedItem, 
+    favorites, 
+    toggleFavorite,
+    history 
+  } = useForge();
+
+  const handleUpdateItem = (updatedItem: any) => {
+    setSelectedItem(updatedItem);
+  };
+
+  const currentItemIndex = selectedItem ? history.findIndex(item => item.id === selectedItem.id) : -1;
+  const canNavigateToNewer = currentItemIndex > 0;
+  const canNavigateToOlder = currentItemIndex !== -1 && currentItemIndex < history.length - 1;
+
+  const navigateToNewerItem = () => {
+      if (canNavigateToNewer) {
+          setSelectedItem(history[currentItemIndex - 1]);
+      }
+  };
+
+  const navigateToOlderItem = () => {
+      if (canNavigateToOlder) {
+          setSelectedItem(history[currentItemIndex + 1]);
+      }
+  };
+
+  const renderView = () => {
+    const tabConfig = TABS_DATA.find(tab => tab.id === activeView);
+    const effectiveView = tabConfig ? activeView : 'forge';
+
+    switch (effectiveView) {
+        case 'conflicts':
+            return <ClanWarsInterface />;
+        case 'master_tools':
+            return <MasterToolsInterface />;
+        case 'alchemist':
+            return <PromptEngineeringPanel />;
+        case 'cosmaker':
+            return <CosmakerInterface />;
+        case 'filmmaker':
+            return <FilmmakerInterface />;
+        case 'forge':
+        case 'characters':
+        case 'techniques':
+        case 'locations':
+            const initialCategory = tabConfig?.defaultCategory || 'Arma';
+            const allowedCategories = tabConfig?.allowedCategories;
+            return <ForgeInterface 
+                        key={effectiveView} 
+                        initialCategory={initialCategory} 
+                        allowedCategories={allowedCategories}
+                    />;
+        default:
+             const fallbackConfig = TABS_DATA.find(t => t.id === 'forge');
+            return <ForgeInterface 
+                        key="forge-fallback" 
+                        initialCategory={fallbackConfig?.defaultCategory || 'Arma'} 
+                        allowedCategories={fallbackConfig?.allowedCategories} 
+                    />;
+    }
+  };
 
   return (
-    <div className={`${themeClass} relative flex flex-col h-screen overflow-hidden font-sans bg-bg-primary text-text-primary`}>
+    <div className={`app-container view-${activeView}`}>
       <AnimatedThemedBackground view={activeView} />
-      <div className="relative z-10 flex flex-col h-full">
-        <header className="app-header flex-shrink-0 bg-bg-secondary/80 backdrop-blur-sm border-b border-border-color flex items-center justify-between px-4 sm:px-6 py-3">
-          <div className="flex items-center space-x-3">
-              <h1 className="text-xl sm:text-2xl font-gangofthree text-text-primary tracking-wider">
-                Kimetsu Forge
-              </h1>
-          </div>
-          <nav className="hidden md:flex items-center space-x-1 sm:space-x-2">
-            {VIEWS.map((view) => (
-              <NavItem
-                key={view.id}
-                viewItem={view}
-                isActive={activeView === view.id}
-                onClick={() => setActiveView(view.id)}
-              />
-            ))}
-          </nav>
-           <div className="flex items-center gap-2">
-                <Tooltip content="Sobre o App">
-                    <Button variant="ghost" size="icon" onClick={openAboutModal}>
-                        <InfoIcon />
-                    </Button>
-                </Tooltip>
-                <Tooltip content="Gerenciar Chaves de API">
-                    <Button variant="ghost" size="icon" onClick={openApiKeysModal}>
-                        <KeyIcon />
-                    </Button>
-                </Tooltip>
-            </div>
-        </header>
-
-        <main className="app-main-view flex-grow flex flex-col overflow-y-auto">
-          <ViewRenderer activeView={activeView} />
+      
+      <div className="main-content">
+        <Header onOpenAbout={openAboutModal} onOpenHowItWorks={openHowItWorksModal} />
+        
+        <main className="app-main-view flex-1 min-h-0">
+          <ErrorBoundary>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeView}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="h-full w-full"
+              >
+                {renderView()}
+              </motion.div>
+            </AnimatePresence>
+          </ErrorBoundary>
         </main>
       </div>
+
+      <AboutModal isOpen={isAboutModalOpen} onClose={closeAboutModal} />
+      <HowItWorksModal isOpen={isHowItWorksModalOpen} onClose={closeHowItWorksModal} />
+      <ApiKeysModal isOpen={isApiKeysModalOpen} onClose={closeApiKeysModal} />
+      <LibraryTome isOpen={isLibraryTomeOpen} onClose={closeLibraryTome} initialState={libraryTomeInitialState} />
+       <DetailModal
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        item={selectedItem}
+        isFavorite={selectedItem ? favorites.some(fav => fav.id === selectedItem.id) : false}
+        onToggleFavorite={toggleFavorite}
+        onUpdate={handleUpdateItem}
+        onGenerateVariant={() => {}}
+        onNavigateNewer={navigateToNewerItem}
+        onNavigateOlder={navigateToOlderItem}
+        canNavigateNewer={canNavigateToNewer}
+        canNavigateOlder={canNavigateToOlder}
+      />
       
-      {/* Global Modals */}
-      <AboutModal />
-      <ApiKeysModal />
-      <DetailModal />
+      <ErrorDisplay error={appError} onDismiss={() => setAppError(null)} onRetry={appError?.onRetry} />
+      <OnboardingTour />
     </div>
   );
 };
 
-
-interface NavItemProps {
-  viewItem: ViewItem;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ viewItem, isActive, onClick }) => {
+// Main App component that wraps everything with providers
+const App = () => {
   return (
-    <button
-      onClick={onClick}
-      className={`relative group flex flex-col items-center justify-center p-2 rounded-md transition-all duration-200 ease-in-out w-20
-        ${isActive ? 'bg-accent-start/20 text-accent-end' : 'text-text-muted hover:bg-bg-card hover:text-text-primary'}`}
-      title={viewItem.label}
-    >
-      <viewItem.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-      <span className="hidden sm:block text-xs mt-1 truncate">{viewItem.label}</span>
-      {isActive && (
-        <div className="absolute -bottom-3.5 left-0 right-0 h-0.5 bg-accent-gradient" />
-      )}
-    </button>
+    <ToastProvider>
+      <CoreUIProvider>
+        <AuthProvider>
+          <ApiKeysProvider>
+            <UsageProvider>
+              <AlchemyProvider>
+                {/* FIX: Wrap with all providers */}
+                <ConflictsProvider>
+                  <CharactersProvider>
+                    <TechniquesProvider>
+                      <LocationsProvider>
+                        <MasterToolsProvider>
+                          <CosmakerProvider>
+                            <FilmmakerProvider>
+                              <ForgeProvider>
+                                  <AppContent />
+                              </ForgeProvider>
+                            </FilmmakerProvider>
+                          </CosmakerProvider>
+                        </MasterToolsProvider>
+                      </LocationsProvider>
+                    </TechniquesProvider>
+                  </CharactersProvider>
+                </ConflictsProvider>
+              </AlchemyProvider>
+            </UsageProvider>
+          </ApiKeysProvider>
+        </AuthProvider>
+      </CoreUIProvider>
+    </ToastProvider>
   );
 };
 

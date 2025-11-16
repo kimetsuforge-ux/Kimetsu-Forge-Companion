@@ -1,42 +1,48 @@
-
-
 import React from 'react';
 import { Modal } from '../ui/Modal';
-import { useCoreUI } from '../../contexts/AppContext';
 import { Button } from '../ui/Button';
+import { GeneratedItem } from '../../types';
 
-export const DetailModal: React.FC = () => {
-  const { isDetailModalOpen, closeDetailModal, selectedItem } = useCoreUI();
+interface DetailModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    item: GeneratedItem | null;
+    isFavorite: boolean;
+    onToggleFavorite: (item: GeneratedItem) => void;
+    onUpdate: (item: GeneratedItem) => void;
+    onGenerateVariant: () => void;
+    onNavigateNewer: () => void;
+    onNavigateOlder: () => void;
+    canNavigateNewer: boolean;
+    canNavigateOlder: boolean;
+}
 
+
+export const DetailModal: React.FC<DetailModalProps> = ({
+    isOpen,
+    onClose,
+    item,
+}) => {
   const getTitle = () => {
-    if (!selectedItem) return "Detalhes";
-    return selectedItem.name || selectedItem.title || "Detalhes do Item";
+    if (!item) return "Detalhes";
+    // FIX: Property 'name' does not exist on type 'GeneratedItem'. Use 'nome' instead.
+    return item.nome || "Detalhes do Item";
   };
 
   const getContent = () => {
-      if (!selectedItem) return null;
-      // Handle different item structures
-      if (selectedItem.content) return selectedItem.content; // ForgeItem
-      if (selectedItem.synopsis) { // ConflictItem
-          return `**Escala:** ${selectedItem.scale}\n**Tipo de Missão:** ${selectedItem.missionType}\n**Facções Envolvidas:** ${selectedItem.factionsInvolved}\n\n**Sinopse:**\n${selectedItem.synopsis}`;
-      }
-      if (selectedItem.backstory) { // CharacterItem
-          return `**Afiliação:** ${selectedItem.affiliation}\n**Classe:** ${selectedItem.rank}\n\n**Aparência:**\n${selectedItem.appearance}\n\n**Personalidade:**\n${selectedItem.personality}\n\n**História:**\n${selectedItem.backstory}\n\n**Habilidades:**\n${selectedItem.abilities}`;
-      }
-      if (selectedItem.description) { // TechniqueItem or LocationItem
-          if(selectedItem.pointsOfInterest) { // LocationItem
-            return `${selectedItem.description}\n\n**Pontos de Interesse:**\n${selectedItem.pointsOfInterest}`;
-          }
-          return selectedItem.description; // TechniqueItem
-      }
-      return "Conteúdo não disponível.";
+      if (!item) return null;
+      // FIX: Properties 'content' and 'description' do not exist on type 'GeneratedItem'. Use 'descricao'.
+      if (item.content) return item.content;
+      if (item.descricao) return item.descricao;
+      // Fallback for any other structure
+      return JSON.stringify(item, null, 2);
   };
 
 
   return (
-    <Modal isOpen={isDetailModalOpen} onClose={closeDetailModal} title={getTitle()} variant='drawer-left'>
-      <div className="space-y-4 text-text-secondary h-full flex flex-col">
-        {selectedItem ? (
+    <Modal isOpen={isOpen} onClose={onClose} title={getTitle()} variant='drawer-left'>
+      <div className="space-y-4 text-text-secondary h-full flex flex-col p-4">
+        {item ? (
           <div className="flex-grow space-y-4 overflow-y-auto pr-2">
               <h3 className="text-xl font-semibold text-text-primary font-gangofthree bg-accent-gradient bg-clip-text text-transparent">
                   {getTitle()}
@@ -52,7 +58,7 @@ export const DetailModal: React.FC = () => {
         )}
         
         <div className="pt-4 flex justify-end mt-auto">
-            <Button onClick={closeDetailModal} variant="secondary">
+            <Button onClick={onClose} variant="secondary">
                 Fechar
             </Button>
         </div>

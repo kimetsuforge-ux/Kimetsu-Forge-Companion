@@ -1,37 +1,27 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
-interface SwitchProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label?: string;
+interface SwitchProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
 }
 
-const Switch: React.FC<SwitchProps> = ({ checked, onChange, label }) => {
-  const spring = {
-    type: 'spring' as const,
-    stiffness: 700,
-    damping: 30,
-  };
+export const Switch: React.FC<SwitchProps> = ({ label, checked, onChange, disabled, ...props }) => {
+  const labelClasses = `flex items-center space-x-2 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`;
 
   return (
-    <label className="flex items-center cursor-pointer">
-      <div
-        className={`relative w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${
-          checked ? 'bg-accent-end' : 'bg-bg-secondary'
-        }`}
-        onClick={() => onChange(!checked)}
-      >
-        <motion.div
-          className="w-4 h-4 bg-white rounded-full shadow-md"
-          layout
-          transition={spring}
-          style={{ x: checked ? '100%' : '0%' }}
+    <label className={labelClasses}>
+      <div className="relative">
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          onChange={onChange}
+          disabled={disabled}
+          {...props}
         />
+        <div className={`block w-10 h-6 rounded-full transition-colors ${checked ? 'bg-[var(--accent-start)]' : 'bg-gray-600'}`}></div>
+        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-4' : ''}`}></div>
       </div>
-      {label && <span className="ml-3 text-sm text-text-primary">{label}</span>}
+      <span className="text-sm text-gray-300 select-none">{label}</span>
     </label>
   );
 };
-
-export { Switch };

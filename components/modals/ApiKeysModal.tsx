@@ -4,7 +4,8 @@ import { Modal } from '../ui/Modal';
 import { TextInput } from '../ui/TextInput';
 import { Button } from '../ui/Button';
 import { SaveIcon, TrashIcon } from '../icons';
-import { useApiKeys, useAuth, useCoreUI } from '../../contexts/AppContext';
+// FIX: Changed useCoreUI to useAppCore
+import { useApiKeys, useAuth, useAppCore } from '../../contexts/AppContext';
 
 // Placeholder for Toast until it's created as per original file, since ToastProvider doesn't exist.
 const useToast = () => ({
@@ -18,7 +19,7 @@ const useToast = () => ({
 });
 
 export const ApiKeysModal: React.FC = () => {
-  const { isApiKeysModalOpen, closeApiKeysModal } = useCoreUI();
+  const { isApiKeysModalOpen, closeApiKeysModal } = useAppCore();
   const { user } = useAuth();
   const {
     geminiApiKey, setGeminiApiKey,

@@ -1,12 +1,15 @@
 import React from 'react';
 import { Button } from '../../components/ui/Button';
 import { CollapsibleSection } from '../../components/ui/CollapsibleSection';
-import { SearchableMultiSelect, Select } from '../../components/ui/Select';
+// FIX: Import from ui barrel file
+import { SearchableMultiSelect, Select } from '../../components/ui';
 import { Slider } from '../../components/ui/Slider';
 import { Switch } from '../../components/ui/Switch';
 import { TextArea } from '../../components/ui/TextArea';
+// FIX: Added missing constants
 import { CONFLICT_SCALES, CONFLICT_TYPES, FACTIONS } from '../../constants';
 import type { ConflictFiltersState } from '../ConflictsInterface';
+import { SelectOption } from '../../types';
 
 interface FiltersPanelProps {
     filters: ConflictFiltersState;
@@ -55,8 +58,8 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                          <Select 
                            label="Tipo de Missão"
                            options={CONFLICT_TYPES}
-                           value={filters.missionType}
-                           onChange={(val) => updateFilter('missionType', val)}
+                           value={filters.missionType?.value as string}
+                           onChange={(val) => updateFilter('missionType', CONFLICT_TYPES.find(o => o.value === val) || null)}
                         />
                     </div>
                 </CollapsibleSection>
@@ -66,14 +69,15 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                        <SearchableMultiSelect 
                             label="Facções Envolvidas"
                             options={FACTIONS}
-                            value={filters.factions}
-                            onChange={(val) => updateFilter('factions', val)}
+                            selected={filters.factions.map(f => f.value as string)}
+                            onChange={(vals) => updateFilter('factions', vals.map(v => FACTIONS.find(o => o.value === v)).filter(Boolean) as SelectOption[])}
                             placeholder="Selecione as facções..."
                        />
                        <Switch 
                             label="Adicionar Reviravolta (Plot Twist)"
                             checked={filters.addPlotTwist}
-                            onChange={(val) => updateFilter('addPlotTwist', val)}
+                            // FIX: pass boolean value from event
+                            onChange={(e) => updateFilter('addPlotTwist', e.target.checked)}
                        />
                     </div>
                 </CollapsibleSection>
@@ -84,6 +88,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({ filters, setFilters,
                     className="w-full" 
                     size="lg" 
                     onClick={onGenerate}
+                    // FIX: Added isLoading prop
                     isLoading={isLoading}
                 >
                     {isLoading ? 'Gerando...' : 'Gerar Conflito'}

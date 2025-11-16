@@ -1,37 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 
 interface CollapsibleSectionProps {
-  title: React.ReactNode;
+  title: string;
   children: React.ReactNode;
+  wrapperClassName?: string;
+  forceOpen?: boolean;
+  // FIX: Added `defaultOpen` prop to allow parent component to control the initial open state.
   defaultOpen?: boolean;
-  className?: string;
 }
 
-const ChevronDownIcon = ({ className = '' }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-5 h-5 ${className}`}>
-      <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-    </svg>
-);
-
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-  title,
-  children,
-  defaultOpen = false,
-  className = ''
-}) => {
+export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, children, wrapperClassName = '', forceOpen, defaultOpen = false }) => {
+  // FIX: Initialize the open state using the `defaultOpen` prop.
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  useEffect(() => {
+    if (forceOpen !== undefined) {
+      setIsOpen(forceOpen);
+    }
+  }, [forceOpen]);
+
   return (
-    <div className={`w-full border-b border-border-color ${className}`}>
-      <button
-        className="flex items-center justify-between w-full py-4 text-left"
+    <div className={`collapsible-section ${wrapperClassName} ${isOpen ? 'open' : ''}`}>
+      <button 
+        className="collapsible-header"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={forceOpen}
+        aria-expanded={isOpen}
       >
-        <span className="font-semibold text-text-primary">{title}</span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDownIcon className="text-text-muted" />
-        </motion.div>
+        <h3 className="text-md font-semibold text-white">{title}</h3>
+        {!forceOpen && <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />}
       </button>
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -41,20 +40,15 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             animate="open"
             exit="collapsed"
             variants={{
-              open: { opacity: 1, height: 'auto' },
-              collapsed: { opacity: 0, height: 0 },
+              open: { opacity: 1, height: 'auto', marginTop: '1rem' },
+              collapsed: { opacity: 0, height: 0, marginTop: 0 }
             }}
             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-            className="overflow-hidden"
           >
-            <div className="pb-4">
-              {children}
-            </div>
+            {children}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
-
-export { CollapsibleSection };

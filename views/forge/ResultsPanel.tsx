@@ -1,16 +1,19 @@
 import React from 'react';
+// FIX: Import ForgeItem (now defined in types.ts)
 import type { ForgeItem } from '../../types';
+// FIX: Card sub-components are now exported from Card.tsx
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { GeneratedItem } from '../../types';
 
 interface ResultsPanelProps {
-    results: ForgeItem[];
+    results: GeneratedItem[];
     isLoading: boolean;
     error: string | null;
     onRetry: () => void;
-    onViewDetails: (item: ForgeItem) => void;
-    onToggleFavorite: (item: ForgeItem) => void;
+    onViewDetails: (item: GeneratedItem) => void;
+    onToggleFavorite: (item: GeneratedItem) => void;
 }
 
 const ForgeIcon = ({ className }: { className?: string }) => (
@@ -70,17 +73,17 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ results, isLoading, 
                 {results.map(item => (
                     <Card key={item.id} className="flex flex-col">
                         <CardHeader>
-                            <CardTitle className="truncate">{item.name}</CardTitle>
+                            <CardTitle className="truncate">{item.nome}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow">
                             <p className="text-sm text-text-secondary line-clamp-4">
-                                {item.content}
+                                {item.descricao}
                             </p>
                         </CardContent>
                         <CardFooter className="gap-2">
                             <Button variant="secondary" className="w-full" onClick={() => onViewDetails(item)}>Ver Detalhes</Button>
-                            <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(item)} title={item.isFavorite ? 'Desfavoritar' : 'Favoritar'}>
-                               <HeartIcon className={`w-5 h-5 ${item.isFavorite ? 'text-red-500' : 'text-text-muted'}`} isFavorite={item.isFavorite}/>
+                            <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(item)} title={item.is_favorite ? 'Desfavoritar' : 'Favoritar'}>
+                               <HeartIcon className={`w-5 h-5 ${item.is_favorite ? 'text-red-500' : 'text-text-muted'}`} isFavorite={item.is_favorite}/>
                             </Button>
                         </CardFooter>
                     </Card>

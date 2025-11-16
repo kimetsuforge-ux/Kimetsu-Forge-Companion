@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { useCoreUI, useTechniques } from '../contexts/AppContext';
+// FIX: Replaced non-existent hooks with correct ones from AppContext
+import { useAppCore, useForge } from '../contexts/AppContext';
 import { FiltersPanel } from './techniques/FiltersPanel';
 import { ResultsPanel } from './techniques/ResultsPanel';
-import type { SelectOption } from '../components/ui/Select';
-import type { TechniqueItem } from '../types';
+// FIX: Imported SelectOption from types.ts
+import type { SelectOption } from '../types';
+// FIX: Imported TechniqueItem from types.ts
+import type { TechniqueItem, GeneratedItem } from '../types';
+// FIX: Imported constants
 import { TECHNIQUE_TYPES, BASE_ELEMENTS, TECHNIQUE_COMPLEXITY } from '../constants';
 
 export interface TechniqueFiltersState {
@@ -23,12 +27,13 @@ const initialFiltersState: TechniqueFiltersState = {
 };
 
 const TechniquesInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError, openDetailModal } = useCoreUI();
-    const { history, setHistory, toggleFavorite } = useTechniques();
+    // FIX: Corrected hook usage
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    const { history, addHistoryItem, toggleFavorite, setSelectedItem: openDetailModal } = useForge();
     const [filters, setFilters] = useState<TechniqueFiltersState>(initialFiltersState);
     
     const handleGenerate = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
@@ -57,24 +62,34 @@ const TechniquesInterface: React.FC = () => {
 
             const parsedResponse = JSON.parse(responseText);
 
-            const newItem: TechniqueItem = {
+            const newItem: GeneratedItem = {
                 id: `tech-${Date.now()}`,
+                nome: parsedResponse.name,
+                descricao: parsedResponse.description,
+                descricao_curta: parsedResponse.description.substring(0, 100) + '...',
+                categoria: filters.type.value === 'respiracao' ? 'Respiração' : 'Kekkijutsu',
+                is_favorite: false,
+                createdAt: new Date().toISOString(),
                 ...parsedResponse,
-                isFavorite: false,
+                raridade: 'Épica',
+                nivel_sugerido: 12,
+                ganchos_narrativos: [],
             };
-            setHistory(prev => [newItem, ...prev]);
+            addHistoryItem(newItem);
 
         } catch (e: any) {
             console.error("Erro durante a criação de técnica:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
 
-    const handleViewDetails = (item: TechniqueItem) => {
+    const handleViewDetails = (item: GeneratedItem) => {
         openDetailModal(item);
     };
+
+    const techniqueHistory = history.filter(item => item.categoria === 'Respiração' || item.categoria === 'Kekkijutsu');
 
     return (
         <div className='flex-grow flex flex-col md:flex-row h-full overflow-hidden'>
@@ -82,16 +97,16 @@ const TechniquesInterface: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={handleGenerate}
-                isLoading={isLoading}
+                isLoading={loadingState.active}
                 onClear={() => setFilters(initialFiltersState)}
             />
             <ResultsPanel
-                results={history}
-                isLoading={isLoading}
-                error={error}
+                results={techniqueHistory as unknown as TechniqueItem[]}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleGenerate}
-                onViewDetails={handleViewDetails}
-                onToggleFavorite={toggleFavorite}
+                onViewDetails={handleViewDetails as any}
+                onToggleFavorite={toggleFavorite as any}
             />
         </div>
     );

@@ -1,8 +1,5 @@
-
-
-
-
 import React from 'react';
+// FIX: Added View to types.ts export
 import type { View } from '../types';
 import ForgeInterface from './ForgeInterface';
 import ConflictsInterface from './ConflictsInterface';
@@ -15,6 +12,7 @@ import CosmakerInterface from './CosmakerInterface';
 import FilmmakerInterface from './FilmmakerInterface';
 import { useAuth } from '../contexts/AppContext';
 import { AuthOverlay } from '../components/AuthOverlay';
+// FIX: Added VIEWS to constants.tsx export
 import { VIEWS } from '../constants';
 
 // A map to associate view IDs with their corresponding components

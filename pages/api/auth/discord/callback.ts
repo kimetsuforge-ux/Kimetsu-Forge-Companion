@@ -1,41 +1,65 @@
 // pages/api/auth/discord/callback.ts
-import { withIronSessionApiRoute } from 'iron-session/next';
-import { NextApiResponse } from 'next';
-import { sessionOptions } from '../../../../lib/session';
+import { Buffer } from 'buffer';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import crypto from 'crypto';
 import { exchangeCodeForToken, getUserProfile, constructAvatarUrl } from '../../../../lib/discord';
 import { isUserWhitelisted } from '../../../../lib/googleSheets';
+import type { User } from '../../../../types';
 
-// FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
-// This allows TypeScript to correctly infer the type of `req` and include the `session` property.
-export default withIronSessionApiRoute(async function discordCallbackRoute(req, res: NextApiResponse) {
-  const { code, error } = req.query;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'default-secret-for-dev-that-is-32-chars-long';
+if (SESSION_SECRET.length < 32) {
+    console.error('SESSION_SECRET is not set or is too short. It must be at least 32 characters long.');
+}
 
-  if (error === 'access_denied' || !code || typeof code !== 'string') {
-    return res.redirect('/?error=discord_login_failed');
-  }
+/**
+ * Securely seals session data into a signed string.
+ * The payload is base64url encoded, and then an HMAC signature is appended.
+ * @param data The session data object.
+ * @returns A promise that resolves to the sealed session string.
+ */
+async function sealData(data: object): Promise<string> {
+    const payload = Buffer.from(JSON.stringify(data)).toString('base64url');
+    const signature = crypto
+        .createHmac('sha256', SESSION_SECRET)
+        .update(payload)
+        .digest('base64url');
+    return `${payload}.${signature}`;
+}
 
-  try {
-    const tokenResponse = await exchangeCodeForToken(code);
-    const userProfile = await getUserProfile(tokenResponse.access_token);
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+    const { code } = req.query;
 
-    const isAuthorized = await isUserWhitelisted(userProfile.id);
-    if (!isAuthorized) {
-        console.warn(`Acesso negado para usuário não-whitelisted: ${userProfile.username} (${userProfile.id})`);
-        return res.redirect('/?error=not_whitelisted');
+    if (typeof code !== 'string') {
+        return res.status(400).redirect('/?error=invalid_code');
     }
 
-    req.session.user = {
-      isLoggedIn: true,
-      id: userProfile.id,
-      username: userProfile.global_name || userProfile.username,
-      avatar: constructAvatarUrl(userProfile.id, userProfile.avatar),
-    };
-    await req.session.save();
+    try {
+        const tokenResponse = await exchangeCodeForToken(code);
+        const discordUser = await getUserProfile(tokenResponse.access_token);
 
-    res.redirect('/');
+        const isWhitelisted = await isUserWhitelisted(discordUser.id);
+        if (!isWhitelisted) {
+            return res.status(403).redirect('/?error=not_whitelisted');
+        }
 
-  } catch (err: any) {
-    console.error('Erro no callback do Discord:', err);
-    res.redirect(`/?error=${encodeURIComponent(err.message)}`);
-  }
-}, sessionOptions);
+        const user: User = {
+            id: discordUser.id,
+            username: discordUser.global_name || discordUser.username,
+            avatar: constructAvatarUrl(discordUser.id, discordUser.avatar),
+        };
+
+        // Create a session cookie
+        const session = await sealData({ user });
+        res.setHeader('Set-Cookie', `user-session=${session}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`); // 30 days
+
+        // Redirect back to the main page
+        res.redirect('/');
+
+    } catch (error: any) {
+        console.error('[DISCORD_CALLBACK_ERROR]', error);
+        res.status(500).redirect(`/?error=${encodeURIComponent(error.message)}`);
+    }
+}

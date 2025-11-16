@@ -1,37 +1,38 @@
-import React, { useCallback, useState } from 'react';
-import { useCoreUI, useForge } from '../contexts/AppContext';
-import type { ForgeItem, FilterState } from '../types';
+import React, { useCallback, useState, useEffect } from 'react';
+// FIX: Changed useCoreUI to useAppCore
+import { useAppCore } from '../contexts/AppContext';
+import { useForge } from '../contexts/AppContext';
+import type { GeneratedItem, FilterState, Category } from '../types';
 import { FilterPanel } from '../components/FilterPanel';
 import { ResultsPanel } from './forge/ResultsPanel';
+// FIX: Added INITIAL_FILTER_STATE to constants export
 import { INITIAL_FILTER_STATE } from '../constants';
-import type { SelectOption } from '../components/ui/Select';
 
-export interface ForgeState {
-  prompt: string;
-  category: SelectOption | null;
-  detailLevel: SelectOption | null;
-  creativity: number;
-  keywords: string;
-  styles: SelectOption[];
-  includeCanon: boolean;
+interface ForgeInterfaceProps {
+    initialCategory: Category;
+    allowedCategories?: Category[];
 }
 
-const ForgeInterface: React.FC = () => {
-    const { isLoading, setLoading, error, setError, openDetailModal } = useCoreUI();
-    // FIX: Removed `filters` and `setFilters` from useForge as they are not provided by the context.
-    const { history, setHistory, toggleFavorite } = useForge();
-    // FIX: Added local state for filters to manage form state within this component, consistent with other interfaces.
-    const [filters, setFilters] = useState<FilterState>(INITIAL_FILTER_STATE);
+const ForgeInterface: React.FC<ForgeInterfaceProps> = ({ initialCategory, allowedCategories }) => {
+    // FIX: Destructure setLoadingState and setAppError correctly.
+    const { loadingState, setLoadingState, appError: error, setAppError: setError } = useAppCore();
+    const { history, addHistoryItem, toggleFavorite, setSelectedItem: openDetailModal } = useForge();
+    const [filters, setFilters] = useState<FilterState>({...INITIAL_FILTER_STATE, category: initialCategory});
     
+    useEffect(() => {
+        setFilters(prev => ({...INITIAL_FILTER_STATE, category: initialCategory}));
+    }, [initialCategory]);
+    
+    // FIX: Added handler for FilterPanel's onFilterChange
+    const handleFilterChange = <K extends keyof FilterState>(field: K, value: FilterState[K]) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
     const handleForge = useCallback(async () => {
-        setLoading(true);
+        setLoadingState({ active: true });
         setError(null);
 
         try {
-            if (!filters.promptModifier) {
-                 throw new Error("Por favor, descreva sua ideia no Modificador de Prompt.");
-            }
-
             const res = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -56,24 +57,34 @@ const ForgeInterface: React.FC = () => {
 
             const results = JSON.parse(responseText);
 
-            const newItems: ForgeItem[] = results.map((item: any) => ({
-                id: `item-${Date.now()}-${Math.random()}`,
-                name: item.title,
-                content: item.description,
-                isFavorite: false,
+            const newItems: GeneratedItem[] = results.map((item: any, index: number) => ({
+                id: `item-${Date.now()}-${index}`,
+                // FIX: Use correct properties for GeneratedItem type
+                nome: item.title,
+                descricao: item.description,
+                descricao_curta: item.description.substring(0, 100) + '...',
+                is_favorite: false,
+                categoria: filters.category,
+                promptModifier: filters.promptModifier,
+                createdAt: new Date().toISOString(),
+                // Add dummy required fields
+                raridade: 'Comum',
+                nivel_sugerido: 1,
+                ganchos_narrativos: [],
             }));
 
-            setHistory(prev => [...newItems, ...prev]);
+            // FIX: Use addHistoryItem from context instead of direct state setter
+            newItems.reverse().forEach(item => addHistoryItem(item));
 
         } catch (e: any) {
             console.error("Erro durante a forja:", e);
-            setError(e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.');
+            setError({ message: e.message || 'Ocorreu um erro desconhecido ao se comunicar com a IA.' });
         } finally {
-            setLoading(false);
+            setLoadingState({ active: false });
         }
-    }, [filters, setHistory, setLoading, setError]);
+    }, [filters, addHistoryItem, setLoadingState, setError]);
 
-    const handleViewDetails = (item: ForgeItem) => {
+    const handleViewDetails = (item: GeneratedItem) => {
         openDetailModal(item);
     };
     
@@ -82,17 +93,19 @@ const ForgeInterface: React.FC = () => {
             <aside className="w-full md:w-1/3 lg:w-1/4 h-full flex flex-col bg-bg-secondary border-r border-border-color overflow-y-auto">
                 <FilterPanel 
                     filters={filters}
-                    setFilters={setFilters}
+                    // FIX: Pass onFilterChange instead of setFilters
+                    onFilterChange={handleFilterChange}
                     onGenerate={handleForge}
-                    isLoading={isLoading}
-                    onReset={() => setFilters(INITIAL_FILTER_STATE)}
-                    allowedCategories={['Arma', 'Acessório', 'Caçador', 'Inimigo/Oni', 'Kekkijutsu', 'Respiração', 'Missões', 'NPC', 'Evento', 'Local/Cenário', 'Mitologia', 'História Antiga', 'Guerra de Clãs']}
+                    isLoading={loadingState.active}
+                    onReset={() => setFilters({...INITIAL_FILTER_STATE, category: initialCategory})}
+                    allowedCategories={allowedCategories}
                 />
             </aside>
             <ResultsPanel
-                results={history}
-                isLoading={isLoading}
-                error={error}
+                // FIX: Use 'categoria' instead of 'category'
+                results={history.filter(item => allowedCategories ? allowedCategories.includes(item.categoria) : true)}
+                isLoading={loadingState.active}
+                error={error?.message || null}
                 onRetry={handleForge}
                 onViewDetails={handleViewDetails}
                 onToggleFavorite={toggleFavorite}
@@ -101,4 +114,5 @@ const ForgeInterface: React.FC = () => {
     );
 };
 
+export { ForgeInterface };
 export default ForgeInterface;

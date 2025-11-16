@@ -1,46 +1,48 @@
 // pages/api/keys/get.ts
-import { withIronSessionApiRoute } from 'iron-session/next';
-import { NextApiResponse } from 'next';
-import { sessionOptions } from '../../../lib/session';
-import { supabase, supabaseInitializationError } from '../../../lib/supabase';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { supabase, supabaseInitializationError } from '../../../lib/supabaseClient';
 
-// FIX: The handler is now an inline async function passed directly to `withIronSessionApiRoute`.
-// This allows TypeScript to correctly infer the type of `req` and include the `session` property.
-export default withIronSessionApiRoute(async function getKeysRoute(req, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (supabaseInitializationError) {
+        return res.status(503).json({ message: `Serviço de Autenticação indisponível: ${supabaseInitializationError}` });
+    }
+    if (!supabase) {
+        return res.status(503).json({ message: 'Serviço de Autenticação não inicializado.' });
+    }
+
     if (req.method !== 'GET') {
-        res.setHeader('Allow', ['GET']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const user = req.session.user;
-    if (!user || !user.isLoggedIn) {
-        return res.status(401).json({ message: 'Não autorizado.' });
+    const { userId } = req.query;
+
+    if (!userId || typeof userId !== 'string') {
+        return res.status(400).json({ message: 'User ID is required.' });
     }
 
-    if (supabaseInitializationError || !supabase) {
-        console.error('Erro de conexão com o Supabase:', supabaseInitializationError);
-        return res.status(500).json({ message: 'Erro de configuração do banco de dados.' });
-    }
-    
     try {
         const { data, error } = await supabase
             .from('user_api_keys')
             .select('gemini_api_key, openai_api_key, deepseek_api_key')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .single();
 
-        if (error && error.code !== 'PGRST116') { // Ignore 'PGRST116' (no rows found)
-            console.error('Erro ao buscar chaves no Supabase:', error);
-            throw new Error('Falha ao buscar as chaves no banco de dados.');
+        if (error) {
+            // 'PGRST116' is the code for "No rows found"
+            if (error.code === 'PGRST116') {
+                return res.status(200).json({}); // No keys found, return empty object
+            }
+            throw error;
         }
 
         res.status(200).json({
-            geminiApiKey: data?.gemini_api_key || '',
-            openaiApiKey: data?.openai_api_key || '',
-            deepseekApiKey: data?.deepseek_api_key || '',
+            gemini: data.gemini_api_key,
+            openai: data.openai_api_key,
+            deepseek: data.deepseek_api_key,
         });
 
-    } catch (err: any) {
-        res.status(500).json({ message: err.message || 'Ocorreu um erro interno.' });
+    } catch (error: any) {
+        console.error('Error fetching API keys:', error);
+        res.status(500).json({ message: 'Failed to fetch API keys.', details: error.message });
     }
-}, sessionOptions);
+}

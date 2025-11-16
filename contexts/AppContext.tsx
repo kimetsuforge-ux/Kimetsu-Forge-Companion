@@ -1,386 +1,540 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode, useCallback } from 'react';
+// contexts/AppContext.tsx
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { 
+    fetchCreations, 
+    updateCreationFavoriteStatus, 
+    deleteCreationById, 
+    clearAllCreationsForUser
+} from '../lib/client/orchestrationService';
 import type { 
-  View, 
-  CharacterItem, 
-  TechniqueItem, 
-  LocationItem, 
-  ConflictItem, 
-  MasterToolItem, 
-  AlchemistItem, 
-  CosmakerItem, 
-  FilmmakerItem, 
-  User, 
-  ForgeItem, 
-  FilterState, 
-  GuerraDeClasItem,
-  BaseItem
+    AppView, AppError, LoadingState, FilterState, GeneratedItem, User, HistoryItem, MidjourneyParameters, GptParameters, GeminiParameters, AlchemyHistoryItem, MasterToolItem, CosmakerItem, FilmmakerItem
 } from '../types';
-import { INITIAL_FILTER_STATE } from '../constants';
+import { Spinner } from '../components/ui/Spinner';
 
-// --- CoreUI Context ---
+// ===== INITIAL STATES =====
+const initialFilters: FilterState = {
+    category: 'Arma',
+    rarity: 'Aleatória',
+    level: 10,
+    promptModifier: '',
+    quantity: 1,
+    thematics: [],
+    tonalidade: 'Aleatória',
+    country: 'Aleatório',
+};
+
+const initialMjParams: MidjourneyParameters = {
+    aspectRatio: { active: false, value: '16:9' },
+    chaos: { active: false, value: 10 },
+    quality: { active: false, value: 1 },
+    style: { active: false, value: '' },
+    stylize: { active: false, value: 250 },
+    version: { active: false, value: '6.0' },
+    weird: { active: false, value: 250 },
+};
+const initialGptParams: GptParameters = {
+    tone: 'Cinematic', style: 'Concept Art', composition: 'Dynamic Angle'
+};
+const initialGeminiParams: GeminiParameters = {
+    artStyle: "Anime/Manga",
+    lighting: "Cinematic Lighting",
+    colorPalette: "Vibrant",
+    composition: "Dynamic Angle",
+    detailLevel: "Detailed",
+};
+
+
+// ===== CORE UI CONTEXT =====
 interface CoreUIContextType {
-  activeView: View;
-  setActiveView: (view: View) => void;
-  selectedItem: any | null;
-  isDetailModalOpen: boolean;
-  openDetailModal: (item: any) => void;
-  closeDetailModal: () => void;
+  activeView: AppView;
+  changeView: (view: AppView) => void;
   isAboutModalOpen: boolean;
   openAboutModal: () => void;
   closeAboutModal: () => void;
+  isHowItWorksModalOpen: boolean;
+  openHowItWorksModal: () => void;
+  closeHowItWorksModal: () => void;
   isApiKeysModalOpen: boolean;
   openApiKeysModal: () => void;
   closeApiKeysModal: () => void;
-  isLoading: boolean;
-  setLoading: (loading: boolean) => void;
-  error: string | null;
-  setError: (error: string | null) => void;
-  themeClass: string;
+  isLibraryTomeOpen: boolean;
+  openLibraryTome: (initialState: { view: AppView; tab: 'history' | 'favorites' }) => void;
+  closeLibraryTome: () => void;
+  libraryTomeInitialState: { view: AppView; tab: 'history' | 'favorites' };
+  appError: AppError | null;
+  setAppError: React.Dispatch<React.SetStateAction<AppError | null>>;
+  loadingState: LoadingState;
+  setLoadingState: (state: LoadingState) => void;
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 }
-
 const CoreUIContext = createContext<CoreUIContextType | undefined>(undefined);
 
-export function CoreUIProvider({ children }: { children: ReactNode }) {
-  const [activeView, setActiveView] = useState<View>('forge');
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [isDetailModalOpen, setDetailModalOpen] = useState(false);
+export const CoreUIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [activeView, setActiveView] = useState<AppView>('forge');
   const [isAboutModalOpen, setAboutModalOpen] = useState(false);
+  const [isHowItWorksModalOpen, setHowItWorksModalOpen] = useState(false);
   const [isApiKeysModalOpen, setApiKeysModalOpen] = useState(false);
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLibraryTomeOpen, setLibraryTomeOpen] = useState(false);
+  const [libraryTomeInitialState, setLibraryTomeInitialState] = useState<{ view: AppView; tab: 'history' | 'favorites' }>({ view: 'forge', tab: 'history' });
+  const [appError, setAppError] = useState<AppError | null>(null);
+  const [loadingState, setLoadingState] = useState<LoadingState>({ active: false });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const openDetailModal = useCallback((item: any) => {
-    setSelectedItem(item);
-    setDetailModalOpen(true);
-  }, []);
-  
-  const closeDetailModal = useCallback(() => {
-    setDetailModalOpen(false);
-    setSelectedItem(null);
-  }, []);
-  
+  const changeView = useCallback((view: AppView) => setActiveView(view), []);
   const openAboutModal = useCallback(() => setAboutModalOpen(true), []);
   const closeAboutModal = useCallback(() => setAboutModalOpen(false), []);
+  const openHowItWorksModal = useCallback(() => setHowItWorksModalOpen(true), []);
+  const closeHowItWorksModal = useCallback(() => setHowItWorksModalOpen(false), []);
   const openApiKeysModal = useCallback(() => setApiKeysModalOpen(true), []);
   const closeApiKeysModal = useCallback(() => setApiKeysModalOpen(false), []);
+  const openLibraryTome = useCallback((initialState: { view: AppView; tab: 'history' | 'favorites' }) => {
+    setLibraryTomeInitialState(initialState);
+    setLibraryTomeOpen(true);
+  }, []);
+  const closeLibraryTome = useCallback(() => setLibraryTomeOpen(false), []);
+  const toggleSidebar = useCallback(() => setIsSidebarCollapsed(prev => !prev), []);
 
   const value = useMemo(() => ({
-    activeView,
-    setActiveView,
-    selectedItem,
-    isDetailModalOpen,
-    openDetailModal,
-    closeDetailModal,
-    isAboutModalOpen,
-    openAboutModal,
-    closeAboutModal,
-    isApiKeysModalOpen,
-    openApiKeysModal,
-    closeApiKeysModal,
-    isLoading,
-    setLoading,
-    error,
-    setError,
-    themeClass: `view-${activeView}`,
+      activeView, changeView, isAboutModalOpen, openAboutModal, closeAboutModal,
+      isHowItWorksModalOpen, openHowItWorksModal, closeHowItWorksModal,
+      isApiKeysModalOpen, openApiKeysModal, closeApiKeysModal, isLibraryTomeOpen, 
+      openLibraryTome, closeLibraryTome, libraryTomeInitialState,
+      appError, setAppError, loadingState, setLoadingState,
+      isSidebarCollapsed, toggleSidebar
   }), [
-    activeView, 
-    selectedItem, 
-    isDetailModalOpen, 
-    isAboutModalOpen, 
-    isApiKeysModalOpen, 
-    isLoading, 
-    error, 
-    openDetailModal, 
-    closeDetailModal, 
-    openAboutModal, 
-    closeAboutModal, 
-    openApiKeysModal, 
-    closeApiKeysModal
+    activeView, changeView, isAboutModalOpen, openAboutModal, closeAboutModal,
+    isHowItWorksModalOpen, openHowItWorksModal, closeHowItWorksModal,
+    isApiKeysModalOpen, openApiKeysModal, closeApiKeysModal, isLibraryTomeOpen,
+    openLibraryTome, closeLibraryTome, libraryTomeInitialState, appError, loadingState,
+    isSidebarCollapsed, toggleSidebar
   ]);
 
   return <CoreUIContext.Provider value={value}>{children}</CoreUIContext.Provider>;
-}
-
-export function useCoreUI() {
+};
+export const useAppCore = () => {
   const context = useContext(CoreUIContext);
-  if (!context) {
-    throw new Error('useCoreUI must be used within a CoreUIProvider');
-  }
+  if (!context) throw new Error('useAppCore must be used within a CoreUIProvider');
   return context;
-}
+};
 
-// --- Auth Context ---
+// ===== AUTH CONTEXT =====
 interface AuthContextType {
-  user: User | null;
   isAuthenticated: boolean;
-  authLoading: boolean;
+  user: User | null;
   handleLoginClick: () => void;
-  logout: () => void;
+  handleLogout: () => void;
+  isDataLoading: boolean; 
+  setDataLoading: (loading: boolean) => void;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>({
-    id: 'mockuser_123',
-    username: 'Tanjiro Kamado',
-    avatar: 'https://i.imgur.com/L5z2dgE.png'
-  });
-  const [authLoading] = useState(false);
-  const isAuthenticated = !!user;
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const { setAppError } = useAppCore();
+    const [isAuthLoading, setAuthLoading] = useState(true);
+    const [isDataLoading, setDataLoading] = useState(true);
 
-  const handleLoginClick = useCallback(() => {
-    console.log('Login clicked - implement Discord OAuth here');
-    // Implementar lógica de login Discord aqui
-  }, []);
-
-  const logout = useCallback(() => {
-    setUser(null);
-    console.log('User logged out');
-  }, []);
-
-  const value = useMemo(() => ({ 
-    user, 
-    isAuthenticated, 
-    authLoading, 
-    handleLoginClick, 
-    logout 
-  }), [user, isAuthenticated, authLoading, handleLoginClick, logout]);
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-// --- ApiKeys Context ---
-interface ApiKeysContextType {
-  geminiApiKey: string;
-  setGeminiApiKey: (key: string) => void;
-  openaiApiKey: string;
-  setOpenaiApiKey: (key: string) => void;
-  deepseekApiKey: string;
-  setDeepseekApiKey: (key: string) => void;
-  saveKeys: () => Promise<void>;
-}
-
-const ApiKeysContext = createContext<ApiKeysContextType | undefined>(undefined);
-
-export function ApiKeysProvider({ children }: { children: ReactNode }) {
-  // Carregar keys do localStorage
-  const [geminiApiKey, setGeminiApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('gemini_api_key') || '';
-    }
-    return '';
-  });
-  
-  const [openaiApiKey, setOpenaiApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('openai_api_key') || '';
-    }
-    return '';
-  });
-  
-  const [deepseekApiKey, setDeepseekApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('deepseek_api_key') || '';
-    }
-    return '';
-  });
-
-  const saveKeys = useCallback(async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('gemini_api_key', geminiApiKey);
-      localStorage.setItem('openai_api_key', openaiApiKey);
-      localStorage.setItem('deepseek_api_key', deepseekApiKey);
-      console.log('API keys saved to localStorage');
-    }
-  }, [geminiApiKey, openaiApiKey, deepseekApiKey]);
-  
-  const value = useMemo(() => ({ 
-    geminiApiKey, 
-    setGeminiApiKey,
-    openaiApiKey, 
-    setOpenaiApiKey,
-    deepseekApiKey, 
-    setDeepseekApiKey,
-    saveKeys,
-  }), [geminiApiKey, openaiApiKey, deepseekApiKey, saveKeys]);
-
-  return <ApiKeysContext.Provider value={value}>{children}</ApiKeysContext.Provider>;
-}
-
-export function useApiKeys() {
-  const context = useContext(ApiKeysContext);
-  if (!context) {
-    throw new Error('useApiKeys must be used within an ApiKeysProvider');
-  }
-  return context;
-}
-
-// --- Generic Context Factory ---
-function createItemContext<T extends BaseItem>(contextName: string) {
-  interface ItemContextType {
-    history: T[];
-    setHistory: React.Dispatch<React.SetStateAction<T[]>>;
-    favorites: T[];
-    toggleFavorite: (item: T) => void;
-  }
-
-  const ItemContext = createContext<ItemContextType | undefined>(undefined);
-
-  function Provider({ children }: { children: ReactNode }) {
-    const [history, setHistory] = useState<T[]>([]);
-    const [favorites, setFavorites] = useState<T[]>([]);
-
-    const toggleFavorite = useCallback((itemToToggle: T) => {
-      setFavorites(prev => {
-        const isFavorite = prev.some(item => item.id === itemToToggle.id);
-        if (isFavorite) {
-          return prev.filter(item => item.id !== itemToToggle.id);
-        } else {
-          return [...prev, { ...itemToToggle, isFavorite: true }];
-        }
-      });
-      setHistory(prev => prev.map(item => 
-        item.id === itemToToggle.id ? { ...item, isFavorite: !item.isFavorite } : item
-      ));
+    // Check for user session from cookie on initial load
+    useEffect(() => {
+        const checkUserSession = async () => {
+            try {
+                const res = await fetch('/api/auth/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    setUser(data.user);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user session:", error);
+            } finally {
+                setAuthLoading(false);
+            }
+        };
+        checkUserSession();
     }, []);
 
-    const value = useMemo(() => ({ 
-      history, 
-      setHistory,
-      favorites, 
-      toggleFavorite,
-    }), [history, favorites, toggleFavorite]);
-    
-    return <ItemContext.Provider value={value}>{children}</ItemContext.Provider>;
-  }
+    // Handle errors from Discord callback redirect
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const errorParam = params.get('error');
+        if (errorParam) {
+            setAppError({ message: "Falha na Autenticação", details: decodeURIComponent(errorParam) });
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, [setAppError]);
 
-  function useItem() {
-    const context = useContext(ItemContext);
-    if (!context) {
-      throw new Error(`useItem must be used within a ${contextName}Provider`);
+    const handleLoginClick = useCallback(async () => {
+        try {
+            const res = await fetch('/api/auth/discord/url');
+            const { url } = await res.json();
+            window.location.href = url;
+        } catch (error: any) {
+            setAppError({ message: "Não foi possível obter a URL de login do Discord.", details: error.message });
+        }
+    }, [setAppError]);
+
+    const handleLogout = useCallback(async () => {
+        await fetch('/api/auth/logout');
+        setUser(null);
+    }, []);
+
+    const value = useMemo(() => ({
+        isAuthenticated: !!user, user, handleLoginClick, handleLogout, isDataLoading, setDataLoading
+    }), [user, handleLoginClick, handleLogout, isDataLoading]);
+
+    if (isAuthLoading) {
+        return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+                <Spinner size="lg" />
+                <p className="mt-4 text-lg">Verificando sessão...</p>
+            </div>
+        );
     }
+    
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error('useAuth must be used within an AuthProvider');
     return context;
-  }
+};
 
-  return { Provider, useItem };
+// ===== API KEYS CONTEXT =====
+interface ApiKeysContextType {
+    geminiApiKey: string; setGeminiApiKey: (key: string) => void;
+    openaiApiKey: string; setOpenaiApiKey: (key: string) => void;
+    deepseekApiKey: string; setDeepseekApiKey: (key: string) => void;
 }
+const ApiKeysContext = createContext<ApiKeysContextType | undefined>(undefined);
+export const ApiKeysProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    const [geminiApiKey, setGeminiApiKey] = useState('');
+    const [openaiApiKey, setOpenaiApiKey] = useState('');
+    const [deepseekApiKey, setDeepseekApiKey] = useState('');
 
-// --- Create all contexts ---
-const ForgeContext = createItemContext<ForgeItem>('Forge');
-export const ForgeProvider = ForgeContext.Provider;
-export const useForge = ForgeContext.useItem;
+    useEffect(() => {
+        const fetchKeys = async () => {
+            if (user?.id) {
+                try {
+                    const response = await fetch(`/api/keys/get?userId=${user.id}`);
+                    if (response.ok) {
+                        const keys = await response.json();
+                        setGeminiApiKey(keys.gemini || '');
+                        setOpenaiApiKey(keys.openai || '');
+                        setDeepseekApiKey(keys.deepseek || '');
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user API keys:", error);
+                }
+            } else {
+                // Clear keys on logout
+                setGeminiApiKey('');
+                setOpenaiApiKey('');
+                setDeepseekApiKey('');
+            }
+        };
+        fetchKeys();
+    }, [user]);
 
-const ConflictsContext = createItemContext<ConflictItem>('Conflicts');
-export const ConflictsProvider = ConflictsContext.Provider;
-export const useConflicts = ConflictsContext.useItem;
+    const value = useMemo(() => ({
+        geminiApiKey, setGeminiApiKey,
+        openaiApiKey, setOpenaiApiKey,
+        deepseekApiKey, setDeepseekApiKey,
+    }), [geminiApiKey, openaiApiKey, deepseekApiKey]);
 
-const GuerraDeClasContext = createItemContext<GuerraDeClasItem>('GuerraDeClas');
-export const GuerraDeClasProvider = GuerraDeClasContext.Provider;
-export const useGuerraDeClas = GuerraDeClasContext.useItem;
+    return <ApiKeysContext.Provider value={value}>{children}</ApiKeysContext.Provider>;
+};
+export const useApiKeys = () => {
+    const context = useContext(ApiKeysContext);
+    if (!context) throw new Error('useApiKeys must be used within an ApiKeysProvider');
+    return context;
+};
 
-const CharactersContext = createItemContext<CharacterItem>('Characters');
-export const CharactersProvider = CharactersContext.Provider;
-export const useCharacters = CharactersContext.useItem;
-
-const TechniquesContext = createItemContext<TechniqueItem>('Techniques');
-export const TechniquesProvider = TechniquesContext.Provider;
-export const useTechniques = TechniquesContext.useItem;
-
-const LocationsContext = createItemContext<LocationItem>('Locations');
-export const LocationsProvider = LocationsContext.Provider;
-export const useLocations = LocationsContext.useItem;
-
-const MasterToolsContext = createItemContext<MasterToolItem>('MasterTools');
-export const MasterToolsProvider = MasterToolsContext.Provider;
-export const useMasterTools = MasterToolsContext.useItem;
-
-const AlchemyContext = createItemContext<AlchemistItem>('Alchemy');
-export const AlchemyProvider = AlchemyContext.Provider;
-export const useAlchemy = AlchemyContext.useItem;
-
-const CosmakerContext = createItemContext<CosmakerItem>('Cosmaker');
-export const CosmakerProvider = CosmakerContext.Provider;
-export const useCosmaker = CosmakerContext.useItem;
-
-const FilmmakerContext = createItemContext<FilmmakerItem>('Filmmaker');
-export const FilmmakerProvider = FilmmakerContext.Provider;
-export const useFilmmaker = FilmmakerContext.useItem;
-
-// --- Usage Context ---
+// ===== USAGE CONTEXT =====
 interface UsageContextType {
-  dailyUsage: number;
-  usageLimit: number;
-  isLimitReached: boolean;
-  incrementUsage: () => void;
+    usageCount: number;
+    resetTimestamp: number;
+    decrementUsage: () => void;
 }
-
 const UsageContext = createContext<UsageContextType | undefined>(undefined);
 
-export function UsageProvider({ children }: { children: ReactNode }) {
-  const [dailyUsage, setDailyUsage] = useState(0);
-  const usageLimit = 100;
-  const isLimitReached = dailyUsage >= usageLimit;
-  
-  const incrementUsage = useCallback(() => setDailyUsage(c => c + 1), []);
-  
-  const value = useMemo(() => ({ 
-    dailyUsage, 
-    usageLimit, 
-    isLimitReached, 
-    incrementUsage 
-  }), [dailyUsage, usageLimit, isLimitReached, incrementUsage]);
-  
-  return <UsageContext.Provider value={value}>{children}</UsageContext.Provider>;
+export const UsageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const USAGE_LIMIT = 10;
+    const USAGE_RESET_HOURS = 24;
+
+    const [usage, setUsage] = useLocalStorage<{ count: number; reset: number }>('kimetsu-forge-usage', {
+        count: USAGE_LIMIT,
+        reset: Date.now() + USAGE_RESET_HOURS * 60 * 60 * 1000,
+    });
+
+    useEffect(() => {
+        const checkReset = () => {
+            if (Date.now() > usage.reset) {
+                setUsage({
+                    count: USAGE_LIMIT,
+                    reset: Date.now() + USAGE_RESET_HOURS * 60 * 60 * 1000,
+                });
+            }
+        };
+        checkReset();
+        const interval = setInterval(checkReset, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, [usage, setUsage]);
+
+    const decrementUsage = useCallback(() => {
+        setUsage(prev => ({ ...prev, count: Math.max(0, prev.count - 1) }));
+    }, [setUsage]);
+    
+    const value = useMemo(() => ({
+        usageCount: usage.count,
+        resetTimestamp: usage.reset,
+        decrementUsage,
+    }), [usage, decrementUsage]);
+
+    return <UsageContext.Provider value={value}>{children}</UsageContext.Provider>;
 }
 
-export function useUsage() {
-  const context = useContext(UsageContext);
-  if (!context) {
-    throw new Error('useUsage must be used within a UsageProvider');
+export const useUsage = () => {
+    const context = useContext(UsageContext);
+    if (!context) throw new Error('useUsage must be used within a UsageProvider');
+    return context;
+};
+
+// ===== ALCHEMY CONTEXT =====
+interface AlchemyContextType {
+    basePrompt: string; setBasePrompt: (p: string) => void;
+    negativePrompt: string; setNegativePrompt: (p: string) => void;
+    mjParams: MidjourneyParameters; setMjParams: React.Dispatch<React.SetStateAction<MidjourneyParameters>>;
+    gptParams: GptParameters; setGptParams: React.Dispatch<React.SetStateAction<GptParameters>>;
+    geminiParams: GeminiParameters; setGeminiParams: React.Dispatch<React.SetStateAction<GeminiParameters>>;
+    history: AlchemyHistoryItem[];
+    addHistoryItem: (item: AlchemyHistoryItem) => void;
+    selectedItem: AlchemyHistoryItem | null;
+    setSelectedItem: (item: AlchemyHistoryItem | null) => void;
+}
+const AlchemyContext = createContext<AlchemyContextType | undefined>(undefined);
+
+export const AlchemyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [basePrompt, setBasePrompt] = useState('');
+    const [negativePrompt, setNegativePrompt] = useState('');
+    const [mjParams, setMjParams] = useState<MidjourneyParameters>(initialMjParams);
+    const [gptParams, setGptParams] = useState<GptParameters>(initialGptParams);
+    const [geminiParams, setGeminiParams] = useState<GeminiParameters>(initialGeminiParams);
+    const [history, setHistory] = useLocalStorage<AlchemyHistoryItem[]>('alchemy-history', []);
+    const [selectedItem, setSelectedItem] = useState<AlchemyHistoryItem | null>(null);
+
+    const addHistoryItem = useCallback((item: AlchemyHistoryItem) => {
+        setHistory(prev => [item, ...prev.filter(h => h.id !== item.id)]);
+    }, [setHistory]);
+
+    const value = useMemo(() => ({
+        basePrompt, setBasePrompt,
+        negativePrompt, setNegativePrompt,
+        mjParams, setMjParams,
+        gptParams, setGptParams,
+        geminiParams, setGeminiParams,
+        history, addHistoryItem,
+        selectedItem, setSelectedItem
+    }), [basePrompt, negativePrompt, mjParams, gptParams, geminiParams, history, addHistoryItem, selectedItem]);
+
+    return <AlchemyContext.Provider value={value}>{children}</AlchemyContext.Provider>;
+};
+
+export const useAlchemy = () => {
+    const context = useContext(AlchemyContext);
+    if (!context) throw new Error('useAlchemy must be used within an AlchemyProvider');
+    return context;
+};
+
+
+// ===== FORGE CONTEXT =====
+interface ForgeContextType {
+    filters: FilterState;
+    handleFilterChange: <K extends keyof FilterState>(field: K, value: FilterState[K]) => void;
+    resetFilters: () => void;
+    history: GeneratedItem[];
+    addHistoryItem: (item: GeneratedItem) => void;
+    deleteHistoryItem: (id: string) => void;
+    clearHistory: () => void;
+    favorites: GeneratedItem[];
+    toggleFavorite: (item: GeneratedItem) => void;
+    setFavorites: React.Dispatch<React.SetStateAction<GeneratedItem[]>>;
+    selectedItem: GeneratedItem | null;
+    setSelectedItem: (item: GeneratedItem | null) => void;
+}
+const ForgeContext = createContext<ForgeContextType | undefined>(undefined);
+
+export const ForgeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user, setDataLoading, isDataLoading } = useAuth();
+  const { setAppError } = useAppCore();
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [history, setHistory] = useState<GeneratedItem[]>([]);
+  const [favorites, setFavorites] = useState<GeneratedItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<GeneratedItem | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+        if (user) {
+            setDataLoading(true);
+            try {
+                const { history: allHistory, favorites: allFavorites } = await fetchCreations();
+                setHistory(allHistory as GeneratedItem[]);
+                setFavorites(allFavorites as GeneratedItem[]);
+            } catch (err: any) {
+                setAppError({ message: "Erro ao carregar dados da Forja", details: err.message });
+            } finally {
+                setDataLoading(false);
+            }
+        } else {
+            // Clear data on logout
+            setHistory([]);
+            setFavorites([]);
+            setSelectedItem(null);
+            setDataLoading(false);
+        }
+    };
+    loadData();
+  }, [user, setAppError, setDataLoading]);
+
+  const handleFilterChange = useCallback(<K extends keyof FilterState>(field: K, value: FilterState[K]) => {
+      setFilters(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const resetFilters = useCallback(() => setFilters(prev => ({...initialFilters, category: prev.category})), []);
+  
+  const addHistoryItem = useCallback((item: GeneratedItem) => {
+    setHistory(prev => [item, ...prev.filter(h => h.id !== item.id)]);
+  }, []);
+
+  const deleteHistoryItem = useCallback(async (id: string) => {
+    if (!user) return;
+    setHistory(prev => prev.filter(item => item.id !== id));
+    setFavorites(prev => prev.filter(item => item.id !== id));
+    try {
+        await deleteCreationById(id);
+    } catch (err: any) {
+        setAppError({ message: "Erro ao deletar item", details: err.message });
+    }
+  }, [user, setAppError]);
+
+  const clearHistory = useCallback(async () => {
+    if (!user) return;
+    setHistory([]);
+    try {
+        await clearAllCreationsForUser();
+    } catch (err: any) {
+        setAppError({ message: "Erro ao limpar histórico", details: err.message });
+    }
+  }, [user, setAppError]);
+
+  const toggleFavorite = useCallback(async (item: GeneratedItem) => {
+    if (!user) return;
+    const isFav = favorites.some(f => f.id === item.id);
+    setFavorites(prev => isFav ? prev.filter(f => f.id !== item.id) : [item, ...prev]);
+    try {
+        await updateCreationFavoriteStatus(item, !isFav);
+    } catch (err: any) {
+        setAppError({ message: "Erro ao atualizar favoritos", details: err.message });
+    }
+  }, [user, favorites, setAppError]);
+  
+  const value = useMemo(() => ({
+    filters, handleFilterChange, resetFilters, history, addHistoryItem,
+    deleteHistoryItem, clearHistory, favorites, toggleFavorite, setFavorites,
+    selectedItem, setSelectedItem
+  }), [filters, handleFilterChange, resetFilters, history, addHistoryItem,
+    deleteHistoryItem, clearHistory, favorites, toggleFavorite, selectedItem]);
+    
+  if(isDataLoading && user) {
+     return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+                <Spinner size="lg" />
+                <p className="mt-4 text-lg">Carregando grimório da Forja...</p>
+            </div>
+        );
   }
-  return context;
-}
 
-// --- AppProvider (Composer) ---
-export function AppProvider({ children }: { children: ReactNode }) {
-  return (
-    <CoreUIProvider>
-      <AuthProvider>
-        <ApiKeysProvider>
-          <ForgeProvider>
-            <ConflictsProvider>
-              <GuerraDeClasProvider>
-                <CharactersProvider>
-                  <TechniquesProvider>
-                    <LocationsProvider>
-                      <MasterToolsProvider>
-                        <AlchemyProvider>
-                          <CosmakerProvider>
-                            <FilmmakerProvider>
-                              <UsageProvider>
-                                {children}
-                              </UsageProvider>
-                            </FilmmakerProvider>
-                          </CosmakerProvider>
-                        </AlchemyProvider>
-                      </MasterToolsProvider>
-                    </LocationsProvider>
-                  </TechniquesProvider>
-                </CharactersProvider>
-              </GuerraDeClasProvider>
-            </ConflictsProvider>
-          </ForgeProvider>
-        </ApiKeysProvider>
-      </AuthProvider>
-    </CoreUIProvider>
-  );
+  return <ForgeContext.Provider value={value}>{children}</ForgeContext.Provider>;
+};
+export const useForge = () => {
+    const context = useContext(ForgeContext);
+    if (!context) throw new Error('useForge must be used within a ForgeProvider');
+    return context;
+};
+
+// FIX: Add placeholder providers for views that don't have their own context yet.
+export const ConflictsProvider: React.FC<{ children: ReactNode }> = ({ children }) => <>{children}</>;
+export const CharactersProvider: React.FC<{ children: ReactNode }> = ({ children }) => <>{children}</>;
+export const TechniquesProvider: React.FC<{ children: ReactNode }> = ({ children }) => <>{children}</>;
+export const LocationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => <>{children}</>;
+
+// FIX: Add stateful providers for MasterTools, Cosmaker, and Filmmaker
+interface MasterToolsContextType {
+  history: MasterToolItem[];
+  setHistory: React.Dispatch<React.SetStateAction<MasterToolItem[]>>;
+  toggleFavorite: (item: MasterToolItem) => void;
 }
+const MasterToolsContext = createContext<MasterToolsContextType | undefined>(undefined);
+
+export const MasterToolsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [history, setHistory] = useLocalStorage<MasterToolItem[]>('master-tools-history', []);
+  const toggleFavorite = useCallback((item: MasterToolItem) => {
+    setHistory(prev => prev.map(h => h.id === item.id ? { ...h, isFavorite: !h.isFavorite } : h));
+  }, [setHistory]);
+  const value = useMemo(() => ({ history, setHistory, toggleFavorite }), [history, setHistory, toggleFavorite]);
+  return <MasterToolsContext.Provider value={value}>{children}</MasterToolsContext.Provider>;
+};
+export const useMasterTools = () => {
+  const context = useContext(MasterToolsContext);
+  if (!context) throw new Error('useMasterTools must be used within a MasterToolsProvider');
+  return context;
+};
+
+interface CosmakerContextType {
+  history: CosmakerItem[];
+  setHistory: React.Dispatch<React.SetStateAction<CosmakerItem[]>>;
+  toggleFavorite: (item: CosmakerItem) => void;
+}
+const CosmakerContext = createContext<CosmakerContextType | undefined>(undefined);
+
+export const CosmakerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [history, setHistory] = useLocalStorage<CosmakerItem[]>('cosmaker-history', []);
+  const toggleFavorite = useCallback((item: CosmakerItem) => {
+    setHistory(prev => prev.map(h => h.id === item.id ? { ...h, isFavorite: !h.isFavorite } : h));
+  }, [setHistory]);
+  const value = useMemo(() => ({ history, setHistory, toggleFavorite }), [history, setHistory, toggleFavorite]);
+  return <CosmakerContext.Provider value={value}>{children}</CosmakerContext.Provider>;
+};
+export const useCosmaker = () => {
+  const context = useContext(CosmakerContext);
+  if (!context) throw new Error('useCosmaker must be used within a CosmakerProvider');
+  return context;
+};
+
+
+interface FilmmakerContextType {
+  history: FilmmakerItem[];
+  setHistory: React.Dispatch<React.SetStateAction<FilmmakerItem[]>>;
+  toggleFavorite: (item: FilmmakerItem) => void;
+}
+const FilmmakerContext = createContext<FilmmakerContextType | undefined>(undefined);
+
+export const FilmmakerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [history, setHistory] = useLocalStorage<FilmmakerItem[]>('filmmaker-history', []);
+  const toggleFavorite = useCallback((item: FilmmakerItem) => {
+    setHistory(prev => prev.map(h => h.id === item.id ? { ...h, isFavorite: !h.isFavorite } : h));
+  }, [setHistory]);
+  const value = useMemo(() => ({ history, setHistory, toggleFavorite }), [history, setHistory, toggleFavorite]);
+  return <FilmmakerContext.Provider value={value}>{children}</FilmmakerContext.Provider>;
+};
+export const useFilmmaker = () => {
+  const context = useContext(FilmmakerContext);
+  if (!context) throw new Error('useFilmmaker must be used within a FilmmakerProvider');
+  return context;
+};

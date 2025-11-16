@@ -1,5 +1,6 @@
 
-import type { Category, Rarity, FilterState, ViewItem } from './types';
+
+import type { Category, Rarity, FilterState, ViewItem, SelectOption } from './types';
 import { 
     AnvilIcon, 
     ConflictsIcon, 
@@ -11,7 +12,6 @@ import {
     CosmakerIcon,
     FilmmakerIcon
 } from './components/icons';
-import type { SelectOption } from './components/ui/Select';
 
 const BREATHING_STYLES_DATA: { nome: string }[] = [
     { nome: 'Água' }, { nome: 'Chama' }, { nome: 'Vento' }, { nome: 'Pedra' }, { nome: 'Trovão' },
@@ -137,6 +137,7 @@ const METALS_DATA: { value: string, label: string }[] = [
     { value: 'Hihiirokane', label: 'Hihi\'irokane' },
 ];
 
+// FIX: Exported VIEWS constant.
 export const VIEWS: ViewItem[] = [
     { id: 'forge', label: 'Forja', icon: AnvilIcon },
     { id: 'conflicts', label: 'Conflitos', icon: ConflictsIcon },
@@ -189,6 +190,7 @@ export const BLADE_COLOR_OPTIONS = BLADE_COLOR_DATA.map(c => ({ value: c.nome, l
 export const METAL_OPTIONS = METALS_DATA.map(m => ({ value: m.value, label: m.label }));
 export const TONALIDADE_OPTIONS = TONALIDADE_DATA.map(t => ({ value: t.nome, label: t.nome }));
 
+// FIX: Exported various constants for different views.
 export const CONFLICT_SCALES: SelectOption[] = [
     { value: 0, label: 'Duelo Pessoal' },
     { value: 25, label: 'Escaramuça Local' },
@@ -241,6 +243,7 @@ export const COSMAKER_MATERIALS: SelectOption[] = [{ value: 'seda', label: 'Seda
 export const VIDEO_ASPECT_RATIOS: SelectOption[] = [{ value: '16:9', label: '16:9 (Widescreen)' }, { value: '9:16', label: '9:16 (Vertical)' }];
 export const VIDEO_RESOLUTIONS: SelectOption[] = [{ value: '720p', label: '720p (HD)' }, { value: '1080p', label: '1080p (Full HD)' }];
 
+// FIX: Exported INITIAL_FILTER_STATE.
 export const INITIAL_FILTER_STATE: FilterState = {
   category: 'Arma',
   rarity: 'Aleatória',

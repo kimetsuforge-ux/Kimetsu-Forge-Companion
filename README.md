@@ -79,8 +79,6 @@ npm install
 #### 3. Configure as Variáveis de Ambiente
 Crie um arquivo `.env` na raiz do projeto e preencha com suas chaves, usando o `.env.example` como modelo. As variáveis devem começar com `VITE_` para serem acessíveis no frontend.
 
-**Importante:** Este projeto usa um backend separado (Serverless Functions) para as chamadas de API. As chaves de API do lado do servidor (como `GEMINI_API_KEY`, `DISCORD_CLIENT_SECRET`, etc.) devem ser configuradas no ambiente de deploy do seu backend (ex: Vercel, Supabase).
-
 #### 4. Inicie o Servidor de Desenvolvimento
 ```bash
 npm run dev
